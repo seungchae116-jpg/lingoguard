@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
 <script src="tf.min.js"></script>
+<script src="tf-backend-wasm.min.js"></script>
 <style>
 :root{
   --ground:#EBEEF2; --surface:#FFFFFF; --sunk:#DEE3EA; --ink:#0F1822; --ink2:#34414F; --muted:#627080; --line:#CAD2DC; --line2:#E0E5EC;
@@ -132,6 +133,9 @@ h2{font-size:15px;margin:0;font-weight:700;color:var(--ink2)}
 .stage .empty{aspect-ratio:4/3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#9BB0C4;font-size:14px;text-align:center;padding:24px}
 .stage .empty svg{width:48px;height:48px;opacity:.8}
 .stage .mode{position:absolute;left:10px;top:10px;font-size:11.5px;font-weight:700;color:#fff;background:rgba(0,0,0,.55);border-radius:999px;padding:3px 9px}
+.stage.mirror video{transform:scaleX(-1)}
+.stage .flip{position:absolute;right:10px;top:10px;display:flex;align-items:center;gap:6px;min-height:44px;padding:0 14px;border:0;border-radius:999px;background:rgba(0,0,0,.6);color:#fff;font:inherit;font-size:13px;font-weight:700;cursor:pointer}
+.stage .flip svg{width:20px;height:20px}
 .alert{display:grid;grid-template-columns:52px 1fr auto;align-items:center;gap:12px;border-radius:var(--r);padding:14px 16px;background:var(--sunk);color:var(--ink2);min-height:84px}
 .alert .sym{width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18)} .alert .sym svg{width:30px;height:30px}
 .alert .t{font-size:19px;font-weight:700;line-height:1.3} .alert .ko{color:inherit;opacity:.85}
@@ -244,6 +248,7 @@ table.t td.c{text-align:center}
     <canvas id="c-canvas" hidden></canvas>
     <canvas class="ovl" id="c-ovl"></canvas>
     <span class="mode" id="c-mode" hidden></span>
+    <button class="flip" id="c-flip" hidden aria-label="카메라 전환 (셀카 / 후면)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v11H4z"/><path d="M9.5 12.5a2.5 2.5 0 0 0 4.6 1.3M14.5 11.5a2.5 2.5 0 0 0-4.6-1.3"/><path d="M14.3 15.3l-.2-1.5 1.5-.2M9.7 8.7l-.2 1.5 1.5.2"/></svg><span id="c-flip-k">셀카</span></button>
     <div class="empty" id="c-empty"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="7"/></svg><span data-t="check_empty"></span></div>
    </div>
    <div class="row">
@@ -655,17 +660,25 @@ $('#c-capture').onchange = async e => { const f = e.target.files && e.target.fil
   const u = URL.createObjectURL(f); const im = new Image(); im.onload = async () => { await checkImage(im); URL.revokeObjectURL(u); }; im.onerror = () => toast('사진을 열 수 없어요'); im.src = u; };
 /* 실시간 모드 (카메라가 허용된 브라우저에서만) */
 let live = null;
-function liveStop() { if (!live) return; live.on = false; try { live.wl && live.wl.release(); } catch (e) {} if (live.st) live.st.getTracks().forEach(x => x.stop()); $('#c-video').hidden = true; $('#c-video').srcObject = null; $('#c-mode').hidden = true; $('#c-live-k').textContent = '카메라'; live = null; }
+function liveStop() { if (!live) return; live.on = false; try { live.wl && live.wl.release(); } catch (e) {} if (live.st) live.st.getTracks().forEach(x => x.stop()); $('#c-video').hidden = true; $('#c-video').srcObject = null; $('#c-mode').hidden = true; $('#c-flip').hidden = true; $('#c-stage').classList.remove('mirror'); $('#c-live-k').textContent = '카메라'; live = null; }
+let camFacing = 'environment';   // 'environment' = 후면, 'user' = 셀카(전면)
+const openCam = facing => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 } }, audio: false });
+function camLabel() { const selfie = camFacing === 'user'; $('#c-stage').classList.toggle('mirror', selfie); $('#c-flip-k').textContent = selfie ? '후면' : '셀카'; $('#c-mode').textContent = selfie ? '실시간 · 셀카' : '실시간'; }
+$('#c-flip').onclick = async () => { if (!live) return; const want = camFacing === 'user' ? 'environment' : 'user';
+  try { const v = $('#c-video'); live.st.getTracks().forEach(x => x.stop()); const st = await openCam(want);
+    live.st = st; v.srcObject = st; await v.play(); if (!v.videoWidth) await new Promise(r => v.onloadedmetadata = r);
+    camFacing = want; camLabel(); $('#c-ovl').getContext('2d').clearRect(0, 0, 9999, 9999);
+  } catch (e) { toast('카메라를 바꿀 수 없어요', 3000); try { const st = await openCam(camFacing); live.st = st; $('#c-video').srcObject = st; await $('#c-video').play(); } catch (e2) { liveStop(); } } };
 $('#c-live').onclick = async () => { if (live) return liveStop();
   try { const sp = window.speechSynthesis; if (sp) { const u0 = new SpeechSynthesisUtterance(' '); u0.volume = 0; sp.speak(u0); } } catch (e) {}  // iOS: 버튼 누를 때 음성 출력 잠금 해제
-  try { const v = $('#c-video'), st = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 } }, audio: false });
+  try { const v = $('#c-video'), st = await openCam(camFacing);
     v.srcObject = st; v.muted = true; await v.play(); if (!v.videoWidth) await new Promise(r => v.onloadedmetadata = r);
     live = { on: true, st, lastSay: 0, lastBad: -1, lastLog: 0, wl: null };
-    try { if (navigator.wakeLock) live.wl = await navigator.wakeLock.request('screen'); } catch (e) {} v.hidden = false; $('#c-canvas').hidden = true; $('#c-empty').hidden = true; $('#c-mode').hidden = false; $('#c-mode').textContent = '실시간'; $('#c-live-k').textContent = '끄기';
+    try { if (navigator.wakeLock) live.wl = await navigator.wakeLock.request('screen'); } catch (e) {} v.hidden = false; $('#c-canvas').hidden = true; $('#c-empty').hidden = true; $('#c-mode').hidden = false; $('#c-flip').hidden = false; camLabel(); $('#c-live-k').textContent = '끄기';
     const cv = document.createElement('canvas');
     (async function loop() { if (!live || !live.on) return;
       if (!busy && !document.hidden && yoloReady) { busy = true;
-        try { const sc = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight)); cv.width = Math.round(v.videoWidth * sc); cv.height = Math.round(v.videoHeight * sc); cv.getContext('2d').drawImage(v, 0, 0, cv.width, cv.height);
+        try { const sc = Math.min(1, 640 / Math.max(v.videoWidth, v.videoHeight)); cv.width = Math.round(v.videoWidth * sc); cv.height = Math.round(v.videoHeight * sc); const g = cv.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); if (camFacing === 'user') { g.translate(cv.width, 0); g.scale(-1, 1); } g.drawImage(v, 0, 0, cv.width, cv.height);
           const t0 = performance.now(); const J = judge(await ENG.detect(cv, 0.2)); const ms = performance.now() - t0;
           const ov = $('#c-ovl'); drawBoxes(ov, cv.width, cv.height, J); const r = showResult(J, ms, true);
           const now = Date.now(); if (r.bad && (r.bad !== live.lastBad || now - live.lastSay > 6000)) { live.lastSay = now; speak(lastMsg); }
@@ -724,7 +737,14 @@ function renderAdmin() { const D = S.log.filter(e => isToday(e.t)); $('#a-ex').h
 $('#a-clear').onclick = async () => { if (!(await ask('기록 지우기', '이 기기에 저장된 점검·신고·브리핑 기록과 예시 기록을 모두 지웁니다.', '지우기'))) return; S.log = []; store.set('log', []); renderAdmin(); toast('기록을 지웠어요'); };
 
 /* ───────── 엔진 ───────── */
-let yoloReady = false, engErr = '';
+let yoloReady = false, engErr = '', engBackend = '';
+/* 자체 점검: 예시 사진(작업자 2명 · 안전모 1명 미착용)을 판정해 결과가 상식적인지 확인 */
+async function selfTest() {
+  const im = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = SAMPLES.samples[1]; });
+  const dets = await ENG.detect(im, 0.2), J = judge(dets), strong = dets.filter(d => d.s >= CONF).length;
+  const ok = J.P.length >= 1 && J.P.length <= 4 && strong <= 25;
+  return { ok, why: `작업자 ${J.P.length} · 확신 박스 ${strong}`, n: J.P.length, strong };
+}
 /* AI 엔진 로드 — GPU(WebGL) → CPU 순서로 시도하고, 빈 화면으로 한 번 돌려 실제 동작까지 확인한다.
    실패 이유는 상단 'AI 오류'를 누르면 보이고 거기서 다시 시도할 수 있다. */
 async function loadEngine() {
@@ -733,14 +753,20 @@ async function loadEngine() {
   try {
     if (!window.tf) throw new Error('AI 라이브러리(TF.js)를 받지 못했어요 — 인터넷 연결 확인');
     await tf.ready();
-    for (const be of ['webgl', 'cpu']) {
+    // GPU(WebGL) → WASM → CPU 순서로 시도. 기기에 따라(예: 아이폰) GPU 계산 정밀도 문제로 엉뚱한 결과가 나오므로
+    // 예시 현장 사진으로 '정답이 맞는지' 자체 점검(self-test)까지 통과해야 그 방식을 쓴다.
+    const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    for (const be of iOS ? ['wasm', 'webgl', 'cpu'] : ['webgl', 'wasm', 'cpu']) {  // 아이폰은 GPU(WebGL) 결과가 깨지는 사례가 있어 WASM 우선
       try {
+        if (be === 'wasm') { if (!tf.wasm) { log.push('wasm: 모듈 없음'); continue; } tf.wasm.setWasmPaths('./'); }
         if (!(await tf.setBackend(be))) { log.push(be + ': 이 기기에서 지원 안 함'); continue; }
         await tf.ready(); ENG.yoloReset();
         await ENG.yoloLoad('./'); await ENG.yoloWarm();
-        yoloReady = true; engErr = '';
-        $('#eng').className = 'eng ready'; $('#eng-t').textContent = be === 'webgl' ? 'AI · GPU' : 'AI · CPU';
-        if (be !== 'webgl') toast('GPU를 쓸 수 없어 CPU로 판정해요 (조금 느릴 수 있어요)', 4000);
+        const st = await selfTest();
+        if (!st.ok) { log.push(be + ': 자체 점검 실패(' + st.why + ')'); console.warn('[SafeLingo] self-test failed on', be, st); continue; }
+        yoloReady = true; engErr = ''; engBackend = be;
+        $('#eng').className = 'eng ready'; $('#eng-t').textContent = be === 'webgl' ? 'AI · GPU' : be === 'wasm' ? 'AI · 고속 CPU' : 'AI · CPU';
+        if (log.length) console.info('[SafeLingo] fallback log:', log.join(' / '));
         return;
       } catch (e) { log.push(be + ': ' + (e && e.message || e)); }
     }
