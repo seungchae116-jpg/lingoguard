@@ -1,5 +1,5 @@
 /* SafeLingo 서비스워커 — 앱·AI 모델을 기기에 저장해 인터넷 없이도 실행 */
-const V = 'safelingo-9a22e490f7';
+const V = 'safelingo-09da95d5ec';
 const PRE = ["./", "apple-touch-icon.png", "group1-shard1of2.wasm", "group1-shard2of2.wasm", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.html", "manifest.webmanifest", "model.json", "tf-backend-wasm.min.js", "tf.min.js", "tfjs-backend-wasm-simd.wasm", "tfjs-backend-wasm-threaded-simd.wasm", "tfjs-backend-wasm.wasm"];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(PRE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });

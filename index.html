@@ -557,11 +557,35 @@ function seed() {   // 첫 실행용 예시 기록 — '예시'로 표시되고 
 if (!S.log.some(e => isToday(e.t))) S.log = seed().concat(S.log);
 
 /* ───────── 음성 ───────── */
-function speak(text, lang) { try { const sp = window.speechSynthesis; if (!sp) return false; sp.cancel();
-  const code = langOf(lang || L())[3], u = new SpeechSynthesisUtterance(text); u.lang = code; u.rate = 0.95;
-  const v = sp.getVoices().find(v => v.lang && v.lang.replace('_', '-').toLowerCase().startsWith(code.slice(0, 2).toLowerCase())); if (v) u.voice = v;
-  sp.speak(u); if (!v && sp.getVoices().length) toast('이 폰에는 ' + langOf(lang)[2] + ' 음성이 없어 기본 음성으로 읽어요', 3000); return true; } catch (e) { return false; } }
-if (window.speechSynthesis) { try { speechSynthesis.getVoices(); speechSynthesis.onvoiceschanged = () => {}; } catch (e) {} }
+/* 음성 안내 — 기기에 깔린 음성 중 '그 언어의 정상 음성'만 고른다.
+   아이폰·아이패드에는 Bad News·Bubbles·Zarvox 같은 장난용 음성과 Eddy·Grandma 같은 합성 음성도 같은 언어로 들어 있어,
+   예전처럼 '언어 앞 두 글자만 맞는 첫 음성'을 고르면 이상한 목소리가 나왔다. */
+const ODD_VOICE = /^(Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Good News|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Eddy|Flo|Grandma|Grandpa|Reed|Rocko|Sandy|Shelley|Fred|Junior|Kathy|Ralph|Deranged|Hysterical|Pipe Organ)\b/i;
+let VOICES = [];
+function loadVoices() { try { VOICES = (speechSynthesis.getVoices() || []).filter(v => v.lang && !ODD_VOICE.test(v.name)); } catch (e) { VOICES = []; } }
+if (window.speechSynthesis) { loadVoices(); try { speechSynthesis.addEventListener('voiceschanged', loadVoices); } catch (e) { speechSynthesis.onvoiceschanged = loadVoices; } }
+function pickVoice(code) {
+  if (!VOICES.length) loadVoices();
+  const n = x => x.replace('_', '-').toLowerCase(), c = code.toLowerCase(), base = c.slice(0, 2);
+  const cand = VOICES.filter(v => { const l = n(v.lang); return l === c || l === base || l.startsWith(base + '-'); });
+  if (!cand.length) return null;
+  const score = v => (n(v.lang) === c ? 8 : 0) + (/premium|enhanced|고품질|향상/i.test(v.name) ? 4 : 0) + (v.localService ? 2 : 0) + (v.default ? 1 : 0)
+    - (base === 'zh' && /hk|yue|tw/.test(n(v.lang)) ? 6 : 0);   // 중국어는 표준어(zh-CN) 우선, 광둥어 배제
+  return cand.sort((a, b) => score(b) - score(a))[0];
+}
+// 화면 문구 → 다국어 원본 객체 (해당 언어 음성이 없을 때 영어로 대신 읽기 위해)
+const REV = new Map();
+[...Object.values(T), ...SLIDES.map(x => x.t)].forEach(o => { if (o && typeof o === 'object') Object.values(o).forEach(v => typeof v === 'string' && REV.set(v, o)); });
+let warnedNoVoice = {};
+function speak(text, lang) { try { const sp = window.speechSynthesis; if (!sp || !text) return false; sp.cancel();
+  const lg = lang || L(), code = langOf(lg)[3]; let say = text, v = pickVoice(code), useCode = code;
+  if (!v && VOICES.length) {            // 이 기기에 그 언어 음성이 없음 → 이상한 발음으로 읽지 않고 영어로 안내
+    const o = REV.get(text), ev = pickVoice('en-US');
+    if (o && o.en && ev) { say = o.en; v = ev; useCode = 'en-US'; }
+    if (!warnedNoVoice[lg]) { warnedNoVoice[lg] = 1; toast('이 기기에는 ' + langOf(lg)[2] + ' 음성이 없어 ' + (useCode === 'en-US' ? '영어로' : '기본 음성으로') + ' 안내해요 · 설정 › 손쉬운 사용 › 읽기 및 말하기 › 음성에서 추가 가능', 5000); }
+  }
+  const u = new SpeechSynthesisUtterance(say); u.lang = v ? v.lang : useCode; if (v) u.voice = v; u.rate = 1; u.pitch = 1;
+  sp.speak(u); return true; } catch (e) { return false; } }
 
 /* ───────── 화면 전환 ───────── */
 function applyLang() { const lg = langOf(L()); $('#langname').textContent = lg[1]; document.documentElement.lang = lg[0];
