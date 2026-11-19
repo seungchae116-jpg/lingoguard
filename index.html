@@ -229,6 +229,10 @@ body.worker .tabs .in{grid-template-columns:repeat(3,1fr)}
 .ans .ans-x{font-weight:700;color:var(--ng);font-size:15px}
 .ans .ans-pic svg{width:104px;height:104px}
 .ans b{font-size:23px;line-height:1.35}
+html,body{overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+.app,main,.view,.panel,.fl{min-width:0;max-width:100%}
+.fl select{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
+.panel,.tr,.notice,.alert,.mr{overflow-wrap:anywhere;word-break:break-word}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -611,6 +615,7 @@ const ST = {
  doing: { ko: '조치 중', vi: 'Đang xử lý', ne: 'समाधान हुँदै', km: 'កំពុងដោះស្រាយ', id: 'Sedang ditangani', uz: "Ko'rib chiqilmoqda", zh: '处理中', en: 'In progress' },
  done: { ko: '완료', vi: 'Đã xong', ne: 'सम्पन्न', km: 'រួចរាល់', id: 'Selesai', uz: 'Bajarildi', zh: '已完成', en: 'Done' } };
 const STC = { new: 'ng', doing: 'warn', done: 'ok' };
+const RS = { r1: '접수 확인 · 곧 조치', r2: '현장 출동 · 대기 요청', r3: '구역 통제 · 우회 안내', r4: '조치 완료 · 감사 인사' };
 const SLN = { ppe: '보호구 착용', lane: '지게차 통로', power: '정비 전 전원 차단' };
 const SLIDES = [
  { pic: 'ppe', t: { ko: '작업 전 안전모와 안전조끼를 꼭 착용하세요.', vi: 'Trước khi làm việc, hãy đội mũ bảo hộ và mặc áo phản quang.', ne: 'काम सुरु गर्नु अघि सुरक्षा हेलमेट र सुरक्षा ज्याकेट अनिवार्य लगाउनुहोस्।', km: 'មុនពេលធ្វើការ សូមពាក់មួកសុវត្ថិភាព និងអាវសុវត្ថិភាព។', id: 'Sebelum bekerja, wajib pakai helm dan rompi keselamatan.', uz: 'Ishdan oldin xavfsizlik kaskasi va jiletini albatta kiying.', zh: '作业前务必佩戴安全帽并穿好反光背心。', en: 'Always wear your helmet and safety vest before work.' } },
@@ -1001,8 +1006,8 @@ function renderInbox() { const f = S.ifilter, R = S.log.filter(e => e.type === '
       ${e.photo ? `<img class="rph" src="${e.photo}" alt="신고 사진">` : ''}
       <p class="note">조치 제안: ${esc(c[4] || '')}</p>
       <div class="seg">${['new', 'doing', 'done'].map(k => `<button data-st="${k}" data-id="${e.id}" aria-pressed="${st === k}">${ST[k].ko}</button>`).join('')}</div>
-      <label class="fl"><span>작업자에게 답변 · ${lg[2]}로 전달</span><select data-rp="${e.id}"><option value="">— 답변 고르기 —</option>${REPLY.map(r => `<option value="${r.id}"${e.reply === r.id ? ' selected' : ''}>${esc(r.t.ko)}</option>`).join('')}</select></label>
-      ${rp ? `<div class="tr"><span class="eyebrow">작업자 화면에 보이는 문장</span><span lang="${e.lang}">${esc(tr(rp.t, e.lang))}</span></div>` : ''}</div>`; }).join('') || '<p class="note">해당하는 신고가 없어요</p>';
+      <label class="fl"><span>작업자에게 답변 · ${lg[2]}로 전달</span><select data-rp="${e.id}"><option value="">— 답변 고르기 —</option>${REPLY.map(r => `<option value="${r.id}"${e.reply === r.id ? ' selected' : ''}>${esc(RS[r.id])}</option>`).join('')}</select></label>
+      ${rp ? `<div class="tr"><span class="eyebrow">작업자 화면에 보이는 문장</span><span lang="${e.lang}">${esc(tr(rp.t, e.lang))}</span><span class="ko">${esc(rp.t.ko)}</span></div>` : ''}</div>`; }).join('') || '<p class="note">해당하는 신고가 없어요</p>';
   $$('[data-if]').forEach(b => b.onclick = () => { S.ifilter = b.dataset.if; renderInbox(); });
   const byId = id => S.log.find(x => x.id === id);
   $$('[data-st]').forEach(b => b.onclick = () => { const e = byId(b.dataset.id); if (!e) return; e.status = b.dataset.st; e.ht = Date.now(); saveLog(); badge(); renderInbox(); toast('처리 상태: ' + ST[e.status].ko); });
