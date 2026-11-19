@@ -1,5 +1,5 @@
 /* 세이프가드 서비스워커 — 앱·AI 모델을 기기에 저장해 인터넷 없이도 실행 */
-const V = 'safeguard-20261119e';
+const V = 'safeguard-20261120a';
 const PRE = ["./", "apple-touch-icon.png", "group1-shard1of2.wasm", "group1-shard2of2.wasm", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "index.html", "manifest.webmanifest", "model.json", "tf-backend-wasm.min.js", "tf.min.js", "tfjs-backend-wasm-simd.wasm", "tfjs-backend-wasm-threaded-simd.wasm", "tfjs-backend-wasm.wasm"];
 self.addEventListener('install', e => { e.waitUntil(caches.open(V).then(c => c.addAll(PRE)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== V).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
@@ -9,7 +9,9 @@ self.addEventListener('fetch', e => {
   if (u.origin === location.origin) {
     // 앱 화면은 새 버전 우선(실패 시 저장본), 나머지는 저장본 우선
     if (r.mode === 'navigate') { e.respondWith(fetch(r).then(res => { caches.open(V).then(c => c.put('./', res.clone())); return res; }).catch(() => caches.match('./'))); return; }
-    e.respondWith(caches.match(r).then(hit => hit || fetch(r).then(res => { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); return res; })));
+    // 음성 목록은 새 버전 우선(음성 파일을 나중에 추가해도 바로 반영)
+    if (u.pathname.endsWith('/audio/index.json')) { e.respondWith(fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; }).catch(() => caches.match(r))); return; }
+    e.respondWith(caches.match(r).then(hit => hit || fetch(r).then(res => { if (res.ok) { const cp = res.clone(); caches.open(V).then(c => c.put(r, cp)); } return res; })));
   } else if (/fonts\.(googleapis|gstatic)\.com$/.test(u.hostname)) {
     e.respondWith(caches.open(V + '-font').then(c => c.match(r).then(hit => { const net = fetch(r).then(res => { c.put(r, res.clone()); return res; }).catch(() => hit); return hit || net; })));
   }

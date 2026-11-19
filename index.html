@@ -711,8 +711,24 @@ function pickVoice(code) {
 // 화면 문구 → 다국어 원본 객체 (해당 언어 음성이 없을 때 영어로 대신 읽기 위해)
 const REV = new Map();
 [...Object.values(T), ...SLIDES.map(x => x.t)].forEach(o => { if (o && typeof o === 'object') Object.values(o).forEach(v => typeof v === 'string' && REV.set(v, o)); });
+/* 미리 만든 AI 음성 파일 (기기에 그 언어 음성이 없어도 재생)
+   audio/index.json = { "ne": ["hello", "no_helmet", ...], ... } · 파일: audio/<언어>/<키>.mp3 */
+const OBJK = new Map();
+['hello', 'all_ok', 'no_person', 'no_helmet', 'no_vest', 'check_hint', 'correct', 'sent'].forEach(k => OBJK.set(T[k], k));
+SLIDES.forEach(x => OBJK.set(x.t, 's_' + x.pic));
+QUIZ.forEach(q => q.a.forEach(a => { if (a.ok) OBJK.set(a.t, 'a_' + a.pic); }));
+NOTICES.forEach(x => OBJK.set(x.t, x.id)); REPLY.forEach(x => OBJK.set(x.t, x.id));
+[...NOTICES.map(x => x.t), ...REPLY.map(x => x.t), ...QUIZ.flatMap(q => q.a.map(a => a.t))].forEach(o => Object.values(o).forEach(v => typeof v === 'string' && !REV.has(v) && REV.set(v, o)));
+let AUD = {}; const AU = new Audio(); AU.preload = 'auto';
+fetch('audio/index.json').then(r => r.ok ? r.json() : {}).then(j => { AUD = j || {};
+  // 오프라인에서도 나오도록 미리 받아 두기(서비스워커가 저장)
+  setTimeout(() => Object.entries(AUD).forEach(([lg, ks]) => ks.forEach(k => fetch(`audio/${lg}/${k}.mp3`).catch(() => {}))), 4000); }).catch(() => {});
+function playClip(text, lg) { const o = REV.get(text), k = o && OBJK.get(o);
+  if (!k || !(AUD[lg] || []).includes(k)) return false;
+  try { window.speechSynthesis && speechSynthesis.cancel(); AU.pause(); AU.src = `audio/${lg}/${k}.mp3`; AU.currentTime = 0;
+    const p = AU.play(); if (p && p.catch) p.catch(() => { AUD[lg] = (AUD[lg] || []).filter(x => x !== k); speak(text, lg); }); return true; } catch (e) { return false; } }
 let warnedNoVoice = {};
-function speak(text, lang) { try { const sp = window.speechSynthesis; if (!sp || !text) return false; sp.cancel();
+function speak(text, lang) { try { if (text && playClip(text, lang || L())) return true; try { AU.pause(); } catch (e) {} const sp = window.speechSynthesis; if (!sp || !text) return false; sp.cancel();
   const lg = lang || L(), code = langOf(lg)[3]; let say = text, v = pickVoice(code), useCode = code;
   if (!v && VOICES.length) {            // 이 기기에 그 언어 음성이 없음 → 이상한 발음으로 읽지 않고 영어로 안내
     const o = REV.get(text), ev = pickVoice('en-US');
@@ -891,7 +907,8 @@ $('#c-flip').onclick = async () => { if (!live) return; const want = camFacing =
     camFacing = want; camLabel(); fitStage(); $('#c-ovl').getContext('2d').clearRect(0, 0, 9999, 9999);
   } catch (e) { toast('카메라를 바꿀 수 없어요', 3000); try { const st = await openCam(camFacing); live.st = st; $('#c-video').srcObject = st; await $('#c-video').play(); } catch (e2) { liveStop(); } } };
 $('#c-live').onclick = async () => { if (live) return liveStop();
-  try { const sp = window.speechSynthesis; if (sp) { const u0 = new SpeechSynthesisUtterance(' '); u0.volume = 0; sp.speak(u0); } } catch (e) {}  // iOS: 버튼 누를 때 음성 출력 잠금 해제
+  try { const sp = window.speechSynthesis; if (sp) { const u0 = new SpeechSynthesisUtterance(' '); u0.volume = 0; sp.speak(u0); } } catch (e) {}
+  try { AU.muted = true; AU.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='; AU.play().then(() => { AU.pause(); AU.muted = false; }).catch(() => { AU.muted = false; }); } catch (e) {}  // iOS: 버튼 누를 때 음성 출력 잠금 해제
   try { const v = $('#c-video'), st = await openCam(camFacing);
     v.srcObject = st; v.muted = true; await v.play(); if (!v.videoWidth) await new Promise(r => v.onloadedmetadata = r);
     live = { on: true, st, lastSay: 0, lastBad: -1, lastLog: 0, wl: null };
@@ -914,7 +931,7 @@ function renderMine() { const mine = S.log.filter(e => e.type === 'rep' && S.me.
   $('#r-mine-l').innerHTML = mine.map(e => { const st = e.status || 'new', rp = REPLY.find(r => r.id === e.reply), l = LOCS.find(x => x[0] === e.loc);
     return `<div class="mr"><div class="spread"><b lang="${L()}">${esc(catName(e.cat, L()))}</b><span class="pill ${STC[st]}">${esc(tr(ST[st]))}${L() !== 'ko' ? ' · ' + ST[st].ko : ''}</span></div>
       <span class="note"><span class="num">${fmt(e.t)}</span> · ${esc(l ? (L() === 'ko' ? l[1] : tr(l[2])) : '')}</span>
-      ${rp ? `<div class="tr"><span class="eyebrow">${esc(t('reply'))}</span><div lang="${L()}">${esc(tr(rp.t))}</div>${L() !== 'ko' ? `<span class="ko">${esc(rp.t.ko)}</span>` : ''}</div>` : ''}</div>`; }).join(''); }
+      ${rp ? `<div class="tr"><div class="spread"><span class="eyebrow">${esc(t('reply'))}</span><button class="btn sm" data-say="${esc(tr(rp.t))}" aria-label="듣기">${esc(t('listen'))}</button></div><div lang="${L()}">${esc(tr(rp.t))}</div>${L() !== 'ko' ? `<span class="ko">${esc(rp.t.ko)}</span>` : ''}</div>` : ''}</div>`; }).join(''); $$('#r-mine-l [data-say]').forEach(b => b.onclick = () => speak(b.dataset.say)); }
 function renderReport() { const R = S.rep; renderMine();
   $('#r-cats').innerHTML = CATS.map(c => `<button data-c="${c[0]}" aria-pressed="${R.cat === c[0]}">${CATIC[c[0]]}<span><b lang="${L()}">${esc(L() === 'ko' ? c[2] : tr(c[3]))}</b><span class="ko">${c[2]}</span></span></button>`).join('');
   $('#r-locs').innerHTML = LOCS.map(l => `<button data-lc="${l[0]}" aria-pressed="${R.loc === l[0]}"><span lang="${L()}">${esc(L() === 'ko' ? l[1] : tr(l[2]))}</span><span class="ko">${l[1]}</span></button>`).join('');
