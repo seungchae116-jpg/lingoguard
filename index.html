@@ -190,6 +190,40 @@ table.t td.c{text-align:center}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));z-index:50;background:var(--ink);color:var(--surface);padding:12px 16px;border-radius:10px;font-weight:600;font-size:14px;max-width:min(92vw,520px)}
 .modal{position:fixed;inset:0;z-index:60;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;padding:16px}
 .modal .box{background:var(--surface);border-radius:16px;padding:20px;width:100%;max-width:520px;display:flex;flex-direction:column;gap:14px}
+/* 실시간 점검: 카메라·판정이 한 화면에 */
+#v-check.live>div:first-child{display:none}
+#v-check.live #c-samp{display:none}
+#v-check.live .alert{min-height:0;padding:10px 12px;grid-template-columns:40px 1fr auto;gap:10px}
+#v-check.live .alert .sym{width:40px;height:40px} #v-check.live .alert .sym svg{width:24px;height:24px}
+#v-check.live .alert .t{font-size:16px} #v-check.live .alert .spk{width:40px;height:40px}
+#v-check.live #c-workers{padding:10px 12px;gap:6px}
+#v-check.live .workers .w{padding:6px 0}
+.stage.live{margin:0 auto}
+/* 작업자·관리자 모드 */
+.rolechip{border:1px solid #2F4A66;background:#16314D;color:#E6F0FA;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;min-height:32px;cursor:pointer}
+body.admin .tabs.w,body:not(.admin) .tabs.a,body.admin #langchip,body.admin:not(.gating) .eng,body.picking .tabs,body.picking #langchip{display:none}
+body.picking main{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
+.langchip,.rolechip,.eng{white-space:nowrap;flex:none}
+@media (max-width:420px){.bar{gap:8px;padding:10px 12px}.brand{font-size:0;gap:0}.langchip{padding:4px 9px}}
+body.worker .tab[data-tab="admin"]{display:none}
+body.worker .tabs .in{grid-template-columns:repeat(3,1fr)}
+.switch{align-self:center;border:0;background:none;color:var(--muted);font-size:13px;font-weight:600;text-decoration:underline;text-underline-offset:3px;min-height:44px;cursor:pointer}
+.tab{position:relative}
+.tab .bd{position:absolute;top:6px;left:calc(50% + 6px);min-width:18px;height:18px;border-radius:9px;background:var(--ng);color:#fff;font-size:11px;font-weight:700;font-style:normal;display:grid;place-items:center;padding:0 5px}
+.fl{display:flex;flex-direction:column;gap:6px;font-weight:600;font-size:14px;color:var(--ink2)}
+.fl input,.fl textarea,.fl select{min-height:50px;border:1.5px solid var(--line);border-radius:var(--r-s);padding:10px 12px;background:var(--surface);font-size:16px;color:var(--ink);font-weight:500}
+.fl textarea{resize:vertical;line-height:1.5}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg button{min-height:44px;border:1.5px solid var(--line);background:var(--surface);border-radius:var(--r-s);font-weight:700;font-size:14px;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.chips.col{flex-direction:column;align-items:stretch} .chips.col button{border-radius:var(--r-s);text-align:left;padding:10px 14px}
+.rph{width:100%;max-height:220px;object-fit:cover;border-radius:8px}
+.tr{background:var(--accent-soft);border-radius:8px;padding:10px 12px;font-weight:600;display:flex;flex-direction:column;gap:3px}
+.notice{border:2px solid var(--warn);background:var(--warn-soft)}
+.notice .say{font-size:19px;font-weight:700;line-height:1.45}
+.mr{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--line2)} .mr:last-child{border-bottom:0}
+#v-check.live #c-gate{display:none}
+@media print{.bar,.tabs,.switch,#a-clear,#a-exp,.toast{display:none!important} main{padding:0} body{background:#fff} .panel,.stats{break-inside:avoid}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -197,10 +231,29 @@ table.t td.c{text-align:center}
  <header class="bar">
   <div class="brand"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#005EB8"/><path d="M8.5 19.5c0-5 3.4-8.7 7.5-8.7s7.5 3.7 7.5 8.7" fill="none" stroke="#fff" stroke-width="2.6"/><path d="M7 20.5h18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M16 10.8v-2.3" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>SafeLingo</div>
   <button class="langchip" id="langchip" aria-label="언어 바꾸기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span id="langname">Tiếng Việt</span></button>
+  <button class="rolechip" id="rolechip" hidden aria-label="화면 모드 바꾸기"></button>
   <div class="eng" id="eng" role="status"><i></i><span id="eng-t">AI 로딩</span></div>
  </header>
 
  <main>
+  <!-- ── 모드 선택 ── -->
+  <section class="view" id="v-role" hidden aria-labelledby="h-role">
+   <div><div class="eyebrow">Mode · 화면 선택</div><h1 id="h-role">누가 사용하나요?</h1><span class="ko">Who is using this phone? · 작업자 화면과 관리자 화면이 나뉘어 있어요</span></div>
+   <button class="action" data-role="worker"><span class="ic"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/><path d="M16 10.5V8" stroke-linecap="round"/></svg></span><span><span class="t">작업자 · Worker</span><span class="ko">모국어 안전 브리핑 · 보호구 점검 · 위험 신고</span></span><svg class="chev" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></button>
+   <button class="action red" data-role="admin"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-7"/></svg></span><span><span class="t">관리자 · Manager</span><span class="ko">현장 안전 현황 · 위험성평가 초안 · 실시간 기록</span></span><svg class="chev" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></button>
+   <p class="note">앱을 열 때마다 이 화면에서 고를 수 있어요. 관리자 화면은 같은 기기·같은 브라우저에 쌓인 작업자 기록을 자동으로 새로 고쳐 보여줘요. (PC에서 탭 두 개로 작업자/관리자를 나란히 띄우면 실시간으로 확인 가능)</p>
+  </section>
+
+  <!-- ── 작업자 등록 ── -->
+  <section class="view" id="v-reg" hidden aria-labelledby="h-reg">
+   <div><h1 id="h-reg" data-t="reg_title"></h1><span class="ko">이름을 알려주세요 · 관리자 화면에 이 이름으로 기록돼요</span></div>
+   <div class="panel">
+    <label class="fl"><span><span data-t="reg_name"></span> · 이름</span><input id="g-name" maxlength="30" autocomplete="name"></label>
+    <label class="fl"><span><span data-t="reg_team"></span> · 소속(선택)</span><input id="g-team" maxlength="20" placeholder="A조"></label>
+   </div>
+   <button class="btn primary big block" id="g-go" disabled><span><span data-t="start"></span><span class="k">시작하기</span></span></button>
+  </section>
+
   <!-- ── 언어 선택 ── -->
   <section class="view" id="v-lang" hidden aria-labelledby="h-lang">
    <div><div class="eyebrow">Language · 언어</div><h1 id="h-lang">Choose your language</h1><span class="ko">사용할 언어를 고르세요 — 경고·교육·신고가 모두 이 언어로 나옵니다</span></div>
@@ -218,6 +271,7 @@ table.t td.c{text-align:center}
      <div><b><i class="dot" id="st-rep"></i><span data-t="st_rep"></span></b><span id="st-rep-t"></span></div>
     </div>
    </div>
+   <div id="h-notice"></div>
    <div class="inst" id="inst" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
     <div><b>앱으로 설치하기</b><span id="inst-d">홈 화면에 아이콘을 만들어 앱처럼 실행 · 인터넷 없이도 점검</span></div>
@@ -226,6 +280,7 @@ table.t td.c{text-align:center}
    <button class="action" data-go="tbm"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z"/><path d="M8 10h6M8 14h4"/><path d="M18 8h2v11"/></svg></span><span><span class="t" data-t="tbm"></span><span class="ko" data-t="tbm_sub"></span></span><svg class="chev" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></button>
    <button class="action" data-go="check"><span class="ic"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/><path d="M16 10.5V8" stroke-linecap="round"/></svg></span><span><span class="t" data-t="check_title"></span><span class="ko" data-t="check_sub"></span></span><svg class="chev" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></button>
    <button class="action warn" data-go="report"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 22 20H2Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></svg></span><span><span class="t" data-t="report_title"></span><span class="ko" data-t="report_sub"></span></span><svg class="chev" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></button>
+   <div class="row" style="justify-content:center;gap:18px"><button class="switch" data-go="reg">이름 바꾸기</button><button class="switch" data-switch>관리자 화면으로 전환</button></div>
   </section>
 
   <!-- ── 안전 브리핑 ── -->
@@ -238,6 +293,7 @@ table.t td.c{text-align:center}
   <!-- ── 보호구 점검 ── -->
   <section class="view" id="v-check" hidden aria-labelledby="h-check">
    <div><h1 id="h-check" data-t="check_title"></h1><span class="ko" data-t="check_hint"></span></div>
+   <div class="panel" id="c-gate" hidden><div class="spread"><h2>출입구 점검 모드</h2><span class="pill">관리자</span></div><p class="note">입구에 폰·태블릿을 세워 두고 '실시간'을 누르세요. 미착용 경고는 아래 언어로 말해요.</p><div class="chips" id="c-glang"></div></div>
    <div class="alert" id="c-alert" aria-live="polite">
     <div class="sym" id="c-sym"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="12" cy="12" r="8"/></svg></div>
     <div><div class="t" id="c-t"></div><span class="ko" id="c-ko"></span></div>
@@ -251,12 +307,12 @@ table.t td.c{text-align:center}
     <button class="flip" id="c-flip" hidden aria-label="카메라 전환 (셀카 / 후면)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3l2-2h6l2 2h3v11H4z"/><path d="M9.5 12.5a2.5 2.5 0 0 0 4.6 1.3M14.5 11.5a2.5 2.5 0 0 0-4.6-1.3"/><path d="M14.3 15.3l-.2-1.5 1.5-.2M9.7 8.7l-.2 1.5 1.5.2"/></svg><span id="c-flip-k">셀카</span></button>
     <div class="empty" id="c-empty"><svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 16h8l4-6h12l4 6h8v24H6z"/><circle cx="24" cy="27" r="7"/></svg><span data-t="check_empty"></span></div>
    </div>
+   <div class="panel" id="c-workers" hidden><div class="spread"><h2>작업자별 판정</h2><span class="note" id="c-ms"></span></div><div class="workers" id="c-list"></div></div>
    <div class="row">
     <label class="btn primary big" for="c-capture" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg><span><span data-t="check_btn"></span><span class="k">사진 찍어 점검</span></span><input type="file" id="c-capture" accept="image/*" capture="environment" class="visually-hidden"></label>
     <button class="btn big" id="c-live" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M3 12a9 9 0 0 1 18 0 9 9 0 0 1-18 0"/></svg><span>실시간<span class="k" id="c-live-k">카메라</span></span></button>
    </div>
-   <div class="panel" id="c-workers" hidden><div class="spread"><h2>작업자별 판정</h2><span class="note" id="c-ms"></span></div><div class="workers" id="c-list"></div></div>
-   <div class="panel"><div class="spread"><h2>예시 현장 사진</h2><span class="pill ex">공개 데이터셋</span></div><div class="samples" id="c-samples"></div><p class="note">현장이 없어도 눌러 보면 실제 AI가 판정하고 모국어 경고를 냅니다.</p></div>
+   <div class="panel" id="c-samp"><div class="spread"><h2>예시 현장 사진</h2><span class="pill ex">공개 데이터셋</span></div><div class="samples" id="c-samples"></div><p class="note">현장이 없어도 눌러 보면 실제 AI가 판정하고 모국어 경고를 냅니다.</p></div>
   </section>
 
   <!-- ── 위험 신고 ── -->
@@ -267,6 +323,7 @@ table.t td.c{text-align:center}
    <div class="panel"><div class="photo" id="r-photo"><label class="btn" for="r-cap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 8h4l2-3h6l2 3h4v11H3z"/><circle cx="12" cy="13" r="3.5"/></svg><span data-t="photo"></span><input type="file" id="r-cap" accept="image/*" capture="environment" class="visually-hidden"></label><span class="note">선택 · 사진 추가</span></div></div>
    <button class="btn primary big block" id="r-send" disabled><span><span data-t="send"></span><span class="k">신고하기 · 관리자에게 한국어로 전달</span></span></button>
    <div class="done" id="r-done" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg><b data-t="sent"></b><span class="ko">신고가 접수됐어요. 관리자에게 한국어로 전달됩니다.</span><div class="panel" style="width:100%;text-align:left"><span class="eyebrow">관리자에게 전달된 내용</span><div id="r-ko"></div></div></div>
+   <div class="panel" id="r-mine" hidden><h2><span data-t="my_reps"></span> <span class="ko" style="display:inline">· 내 신고</span></h2><div id="r-mine-l"></div></div>
   </section>
 
   <!-- ── 관리 ── -->
@@ -277,16 +334,42 @@ table.t td.c{text-align:center}
    <div class="panel"><div class="spread"><h2>위험성평가 초안</h2><span class="pill warn">검토 필요</span></div>
     <div style="overflow-x:auto"><table class="t" id="a-risk"></table></div>
     <p class="note">오늘의 신고·점검 기록으로 자동 작성한 초안입니다. 위험성 = 가능성(발생 건수 기준 1~3) × 중대성(유형별 1~3). 관리자가 검토한 뒤 확정합니다.</p></div>
+   <div class="panel"><div class="spread"><h2>작업자별 현황</h2><span class="note" id="a-wn"></span></div><div style="overflow-x:auto"><table class="t" id="a-workers"></table></div></div>
    <div class="panel"><div class="spread"><h2>실시간 기록</h2><span class="note" id="a-n"></span></div><div class="feed" id="a-feed"></div></div>
+   <div class="row" id="a-exp"><button class="btn" id="a-csv" style="flex:1">엑셀(CSV) 내보내기</button><button class="btn" id="a-print" style="flex:1">인쇄 · PDF 저장</button></div>
    <button class="btn block" id="a-clear">기록 지우기</button>
+   <button class="switch" data-switch>작업자 화면으로 전환</button>
+  </section>
+  <!-- ── 관리: 신고 처리 ── -->
+  <section class="view" id="v-inbox" hidden aria-labelledby="h-inb">
+   <div><div class="eyebrow">관리자 · 위험 신고</div><h1 id="h-inb">신고 처리</h1><span class="ko">처리 상태와 답변은 신고한 작업자 폰에 모국어로 표시돼요</span></div>
+   <div class="seg" id="i-filter"></div>
+   <div class="view" id="i-list"></div>
+  </section>
+
+  <!-- ── 관리: 공지·브리핑 ── -->
+  <section class="view" id="v-notice" hidden aria-labelledby="h-not">
+   <div><div class="eyebrow">관리자 · 오늘</div><h1 id="h-not">공지 · 브리핑</h1><span class="ko">고른 내용이 작업자 폰에 각자의 언어로 표시돼요</span></div>
+   <div class="panel"><h2>오늘의 안전 브리핑 주제</h2><div class="chips" id="n-slides"></div><p class="note">고른 주제의 수칙과 퀴즈만 작업자에게 나와요.</p></div>
+   <div class="panel"><h2>공지 문장</h2><div class="chips col" id="n-tpls"></div>
+    <label class="fl"><span>직접 입력 (한국어 그대로 표시 · 자동 번역은 서버 연동 후)</span><textarea id="n-text" rows="2" maxlength="120"></textarea></label>
+    <div class="tr" id="n-prev" hidden></div></div>
+   <button class="btn primary big block" id="n-send">작업자에게 보내기</button>
+   <div class="panel" id="n-cur" hidden></div>
   </section>
  </main>
 
- <nav class="tabs" aria-label="주 메뉴"><div class="in">
+ <nav class="tabs w" aria-label="주 메뉴"><div class="in">
   <button class="tab" data-tab="home" aria-current="page"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg><span data-t="tab_home"></span></button>
   <button class="tab" data-tab="check"><span class="ind"></span><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/></svg><span data-t="tab_check"></span></button>
   <button class="tab" data-tab="report"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 22 20H2Z"/><path d="M12 10v4" stroke-linecap="round"/></svg><span data-t="tab_report"></span></button>
   <button class="tab" data-tab="admin"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-7"/></svg><span>관리<small>관리자</small></span></button>
+ </div></nav>
+ <nav class="tabs a" aria-label="관리자 메뉴"><div class="in">
+  <button class="tab" data-tab="admin"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-7"/></svg><span>현황</span></button>
+  <button class="tab" data-tab="inbox"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 22 20H2Z"/><path d="M12 10v4" stroke-linecap="round"/></svg><span>신고 처리</span><i class="bd" id="bd-inbox" hidden></i></button>
+  <button class="tab" data-tab="notice"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6" stroke-linecap="round"/></svg><span>공지·브리핑</span></button>
+  <button class="tab" data-tab="gate"><span class="ind"></span><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/></svg><span>출입구 점검</span></button>
  </div></nav>
  <div class="toast" id="toast" role="status" hidden></div>
  <div class="modal" id="modal" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="m-t"><h2 id="m-t" style="font-size:17px;color:var(--ink)"></h2><p class="note" id="m-d"></p><div class="row"><button class="btn" id="m-no" style="flex:1">취소</button><button class="btn primary" id="m-yes" style="flex:1">확인</button></div></div></div>
@@ -450,6 +533,15 @@ const LANGS = [['vi', 'Tiếng Việt', '베트남어', 'vi-VN', '#DA251D'], ['n
   ['id', 'Bahasa Indonesia', '인도네시아어', 'id-ID', '#E0A100'], ['uz', "O'zbekcha", '우즈베크어', 'uz-UZ', '#1E88E5'], ['zh', '中文', '중국어', 'zh-CN', '#6D4C41'],
   ['en', 'English', '영어', 'en-US', '#546E7A'], ['ko', '한국어', '한국어', 'ko-KR', '#005EB8']];
 const T = {
+ notice: { ko: '관리자 공지', vi: 'Thông báo từ quản lý', ne: 'व्यवस्थापकको सूचना', km: 'សេចក្តីជូនដំណឹងពីអ្នកគ្រប់គ្រង', id: 'Pengumuman manajer', uz: "Rahbar e'loni", zh: '管理人员通知', en: 'Notice from manager' },
+ ack: { ko: '확인했어요', vi: 'Tôi đã hiểu', ne: 'बुझें', km: 'ខ្ញុំបានយល់', id: 'Saya mengerti', uz: 'Tushundim', zh: '我已了解', en: 'I understand' },
+ acked: { ko: '확인 완료', vi: 'Đã xác nhận', ne: 'पुष्टि भयो', km: 'បានបញ្ជាក់', id: 'Sudah dikonfirmasi', uz: 'Tasdiqlandi', zh: '已确认', en: 'Confirmed' },
+ my_reps: { ko: '내 신고', vi: 'Báo cáo của tôi', ne: 'मेरो रिपोर्ट', km: 'របាយការណ៍របស់ខ្ញុំ', id: 'Laporan saya', uz: 'Mening xabarlarim', zh: '我的报告', en: 'My reports' },
+ reply: { ko: '관리자 답변', vi: 'Trả lời của quản lý', ne: 'व्यवस्थापकको जवाफ', km: 'ចម្លើយពីអ្នកគ្រប់គ្រង', id: 'Balasan manajer', uz: 'Rahbar javobi', zh: '管理人员回复', en: 'Manager reply' },
+ reg_title: { ko: '이름을 알려주세요', vi: 'Tên bạn là gì?', ne: 'तपाईंको नाम के हो?', km: 'តើអ្នកឈ្មោះអ្វី?', id: 'Siapa nama Anda?', uz: 'Ismingiz nima?', zh: '请输入您的姓名', en: "What's your name?" },
+ reg_name: { ko: '이름', vi: 'Họ tên', ne: 'नाम', km: 'ឈ្មោះ', id: 'Nama', uz: 'Ism', zh: '姓名', en: 'Name' },
+ reg_team: { ko: '소속 (선택)', vi: 'Tổ / nhóm (không bắt buộc)', ne: 'टोली (ऐच्छिक)', km: 'ក្រុម (ស្រេចចិត្ត)', id: 'Tim (opsional)', uz: 'Jamoa (ixtiyoriy)', zh: '班组（选填）', en: 'Team (optional)' },
+ start: { ko: '시작하기', vi: 'Bắt đầu', ne: 'सुरु गर्नुहोस्', km: 'ចាប់ផ្តើម', id: 'Mulai', uz: 'Boshlash', zh: '开始', en: 'Start' },
  hello: { ko: '안녕하세요', vi: 'Xin chào', ne: 'नमस्ते', km: 'សួស្ដី', id: 'Halo', uz: 'Assalomu alaykum', zh: '你好', en: 'Hello' },
  tab_home: { ko: '홈', vi: 'Trang chủ', ne: 'गृहपृष्ठ', km: 'ទំព័រដើម', id: 'Beranda', uz: 'Bosh sahifa', zh: '首页', en: 'Home' },
  tab_check: { ko: '점검', vi: 'Kiểm tra', ne: 'जाँच', km: 'ពិនិត្យ', id: 'Periksa', uz: 'Tekshiruv', zh: '检查', en: 'Check' },
@@ -484,6 +576,24 @@ const T = {
  not_yet: { ko: '아직', vi: 'Chưa', ne: 'अझै छैन', km: 'មិនទាន់', id: 'Belum', uz: 'Hali yoʻq', zh: '未完成', en: 'Not yet' },
  ok_w: { ko: '완료', vi: 'Xong', ne: 'पूरा', km: 'រួចរាល់', id: 'Selesai', uz: 'Bajarildi', zh: '已完成', en: 'Done' },
 };
+/* 관리자 → 작업자 문장 (AI 번역 초안 · 원어민 검수 전) */
+const NOTICES = [
+ { id: 'n1', t: { ko: '오늘 크레인 작업이 있습니다. 작업 반경 안으로 들어가지 마세요.', vi: 'Hôm nay có công việc cần cẩu. Không đi vào khu vực làm việc của cần cẩu.', ne: 'आज क्रेनको काम छ। काम हुने क्षेत्रभित्र नपस्नुहोस्।', km: 'ថ្ងៃនេះមានការងារស្ទូច។ កុំចូលក្នុងតំបន់ការងារ។', id: 'Hari ini ada pekerjaan crane. Jangan masuk ke area kerja crane.', uz: 'Bugun kran ishlari bor. Ish hududiga kirmang.', zh: '今天有起重机作业，请勿进入作业半径范围内。', en: 'Crane work today. Do not enter the work radius.' } },
+ { id: 'n2', t: { ko: '폭염 주의보입니다. 1시간마다 물을 마시고 그늘에서 쉬세요.', vi: 'Cảnh báo nắng nóng. Uống nước mỗi giờ và nghỉ trong bóng râm.', ne: 'अत्यधिक गर्मीको चेतावनी छ। हरेक घण्टा पानी पिउनुहोस् र छायाँमा आराम गर्नुहोस्।', km: 'មានការព្រមានកំដៅខ្លាំង។ ផឹកទឹករៀងរាល់ម៉ោង ហើយសម្រាកនៅកន្លែងម្លប់។', id: 'Peringatan cuaca panas. Minum air setiap jam dan istirahat di tempat teduh.', uz: 'Kuchli issiq haqida ogohlantirish. Har soatda suv iching va soyada dam oling.', zh: '高温预警。请每小时喝水，并在阴凉处休息。', en: 'Heat warning. Drink water every hour and rest in the shade.' } },
+ { id: 'n3', t: { ko: '바닥이 미끄럽습니다. 뛰지 말고 천천히 걸으세요.', vi: 'Sàn trơn. Không chạy, hãy đi chậm.', ne: 'भुइँ चिप्लो छ। नदौडनुहोस्, बिस्तारै हिँड्नुहोस्।', km: 'កម្រាលឥដ្ឋរអិល។ កុំរត់ សូមដើរយឺតៗ។', id: 'Lantai licin. Jangan berlari, berjalanlah pelan-pelan.', uz: 'Pol sirpanchiq. Yugurmang, sekin yuring.', zh: '地面湿滑，请勿奔跑，慢慢走。', en: 'The floor is slippery. Do not run, walk slowly.' } },
+ { id: 'n4', t: { ko: '오후에 화재 대피 훈련이 있습니다. 경보가 울리면 출입구 앞으로 모이세요.', vi: 'Chiều nay có diễn tập thoát hiểm cháy. Khi chuông báo kêu, hãy tập trung trước lối ra vào.', ne: 'आज दिउँसो आगलागी उद्धार अभ्यास छ। अलार्म बजेपछि प्रवेशद्वार अगाडि भेला हुनुहोस्।', km: 'រសៀលនេះមានការហ្វឹកហាត់ជម្លៀសពេលអគ្គិភ័យ។ ពេលសំឡេងរោទិ៍បន្លឺ សូមប្រមូលផ្តុំនៅមុខច្រកចេញចូល។', id: 'Sore ini ada latihan evakuasi kebakaran. Saat alarm berbunyi, berkumpullah di depan pintu masuk.', uz: "Tushdan keyin yong'indan evakuatsiya mashqi bo'ladi. Signal chalinganda kirish joyi oldiga yig'iling.", zh: '下午有火灾疏散演练。警报响起时，请到出入口前集合。', en: 'Fire evacuation drill this afternoon. When the alarm sounds, gather in front of the entrance.' } },
+ { id: 'n5', t: { ko: '지게차 통로 공사 중입니다. 표시된 우회로로 다니세요.', vi: 'Lối xe nâng đang sửa chữa. Hãy đi theo đường vòng có biển chỉ dẫn.', ne: 'फोर्कलिफ्ट बाटोमा निर्माण काम हुँदैछ। चिन्ह लगाइएको वैकल्पिक बाटो प्रयोग गर्नुहोस्।', km: 'ផ្លូវរថយន្តលើកកំពុងជួសជុល។ សូមប្រើផ្លូវវាងដែលមានសញ្ញា។', id: 'Jalur forklift sedang diperbaiki. Gunakan jalan memutar yang ditandai.', uz: "Yuk ko'targich yo'lagida ta'mirlash ishlari ketmoqda. Belgilangan aylanma yo'ldan yuring.", zh: '叉车通道正在施工，请走标示的绕行路线。', en: 'The forklift lane is under construction. Use the marked detour.' } }];
+const REPLY = [
+ { id: 'r1', t: { ko: '확인했습니다. 곧 조치하겠습니다.', vi: 'Đã nhận. Chúng tôi sẽ xử lý ngay.', ne: 'प्राप्त भयो। चाँडै समाधान गरिनेछ।', km: 'បានទទួល។ យើងនឹងដោះស្រាយឆាប់ៗ។', id: 'Sudah diterima. Akan segera kami tangani.', uz: "Qabul qilindi. Tez orada choralar ko'riladi.", zh: '已收到，我们会尽快处理。', en: 'Received. We will fix it soon.' } },
+ { id: 'r2', t: { ko: '관리자가 현장으로 갑니다. 위험한 곳에서 떨어져 기다려 주세요.', vi: 'Quản lý đang đến hiện trường. Hãy tránh xa chỗ nguy hiểm và chờ.', ne: 'व्यवस्थापक घटनास्थलमा आउँदैछन्। खतरनाक ठाउँबाट टाढा बसेर पर्खनुहोस्।', km: 'អ្នកគ្រប់គ្រងកំពុងមកកន្លែងកើតហេតុ។ សូមនៅឆ្ងាយពីកន្លែងគ្រោះថ្នាក់ ហើយរង់ចាំ។', id: 'Manajer sedang menuju lokasi. Jauhi tempat berbahaya dan tunggu.', uz: 'Rahbar joyiga kelmoqda. Xavfli joydan uzoqroqda kuting.', zh: '管理人员正在赶往现场，请远离危险处等待。', en: 'A manager is coming. Stay away from the danger and wait.' } },
+ { id: 'r3', t: { ko: '해당 구역 출입을 막았습니다. 다른 길로 다니세요.', vi: 'Khu vực đó đã bị chặn. Hãy đi đường khác.', ne: 'त्यो क्षेत्रमा प्रवेश बन्द गरिएको छ। अर्को बाटो प्रयोग गर्नुहोस्।', km: 'តំបន់នោះត្រូវបានបិទ។ សូមប្រើផ្លូវផ្សេង។', id: 'Area tersebut sudah ditutup. Gunakan jalan lain.', uz: "U hududga kirish yopildi. Boshqa yo'ldan yuring.", zh: '该区域已禁止进入，请走其他路线。', en: 'That area is now closed. Please use another way.' } },
+ { id: 'r4', t: { ko: '조치를 완료했습니다. 신고해 주셔서 감사합니다.', vi: 'Đã xử lý xong. Cảm ơn bạn đã báo cáo.', ne: 'समाधान गरियो। रिपोर्ट गर्नुभएकोमा धन्यवाद।', km: 'បានដោះស្រាយរួចរាល់។ សូមអរគុណសម្រាប់ការរាយការណ៍។', id: 'Sudah ditangani. Terima kasih atas laporannya.', uz: 'Muammo hal qilindi. Xabar berganingiz uchun rahmat.', zh: '已处理完毕，感谢您的报告。', en: 'Fixed. Thank you for reporting.' } }];
+const ST = {
+ new: { ko: '접수', vi: 'Đã nhận', ne: 'प्राप्त', km: 'បានទទួល', id: 'Diterima', uz: 'Qabul qilindi', zh: '已接收', en: 'Received' },
+ doing: { ko: '조치 중', vi: 'Đang xử lý', ne: 'समाधान हुँदै', km: 'កំពុងដោះស្រាយ', id: 'Sedang ditangani', uz: "Ko'rib chiqilmoqda", zh: '处理中', en: 'In progress' },
+ done: { ko: '완료', vi: 'Đã xong', ne: 'सम्पन्न', km: 'រួចរាល់', id: 'Selesai', uz: 'Bajarildi', zh: '已完成', en: 'Done' } };
+const STC = { new: 'ng', doing: 'warn', done: 'ok' };
+const SLN = { ppe: '보호구 착용', lane: '지게차 통로', power: '정비 전 전원 차단' };
 const SLIDES = [
  { pic: 'ppe', t: { ko: '작업 전 안전모와 안전조끼를 꼭 착용하세요.', vi: 'Trước khi làm việc, hãy đội mũ bảo hộ và mặc áo phản quang.', ne: 'काम सुरु गर्नु अघि सुरक्षा हेलमेट र सुरक्षा ज्याकेट अनिवार्य लगाउनुहोस्।', km: 'មុនពេលធ្វើការ សូមពាក់មួកសុវត្ថិភាព និងអាវសុវត្ថិភាព។', id: 'Sebelum bekerja, wajib pakai helm dan rompi keselamatan.', uz: 'Ishdan oldin xavfsizlik kaskasi va jiletini albatta kiying.', zh: '作业前务必佩戴安全帽并穿好反光背心。', en: 'Always wear your helmet and safety vest before work.' } },
  { pic: 'lane', t: { ko: '지게차가 다니는 노란 선 안으로 들어가지 마세요.', vi: 'Không đi vào bên trong vạch vàng dành cho xe nâng.', ne: 'फोर्कलिफ्ट चल्ने पहेंलो रेखाभित्र नपस्नुहोस्।', km: 'កុំចូលក្នុងខ្សែពណ៌លឿងដែលរថយន្តលើកធ្វើដំណើរ។', id: 'Jangan masuk ke dalam garis kuning jalur forklift.', uz: "Yuk ko'targich yuradigan sariq chiziq ichiga kirmang.", zh: '不要进入叉车通行的黄线内。', en: 'Do not enter the yellow forklift lane.' } },
@@ -535,8 +645,8 @@ const SYM = { ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 /* ───────── 상태·저장 ───────── */
 const store = { get(k, d) { try { const v = localStorage.getItem('sl_' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
   set(k, v) { try { localStorage.setItem('sl_' + k, JSON.stringify(v)); } catch (e) {} } };
-const S = { lang: store.get('lang', null), log: store.get('log', []), view: 'home', tbmI: 0, quiz: [], rep: { cat: null, loc: null, photo: null } };
-const L = () => S.lang || 'vi';
+const S = { me: store.get('me', {}), gateLang: store.get('gateLang', null), gate: false, ifilter: 'open', nd: null, role: store.get('role', null), lang: store.get('lang', null), log: store.get('log', []), view: 'home', tbmI: 0, quiz: [], rep: { cat: null, loc: null, photo: null } };
+const L = () => (S.gate ? S.gateLang : S.lang) || 'vi';
 const tr = (o, l) => (o && (o[l || L()] || o.en || o.ko)) || '';
 const t = k => tr(T[k]);
 const langOf = k => LANGS.find(x => x[0] === k) || LANGS[0];
@@ -547,13 +657,20 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 function toast(m, ms) { const e = $('#toast'); e.textContent = m; e.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => e.hidden = true, ms || 2600); }
 function ask(title, desc, yes) { return new Promise(res => { $('#m-t').textContent = title; $('#m-d').textContent = desc; $('#m-yes').textContent = yes || '확인'; $('#modal').hidden = false;
   const done = v => { $('#modal').hidden = true; res(v); }; $('#m-yes').onclick = () => done(true); $('#m-no').onclick = () => done(false); }); }
-function logAdd(e) { e.id = e.id || uid(); e.t = e.t || Date.now(); S.log.push(e); if (S.log.length > 300) S.log = S.log.slice(-300); store.set('log', S.log.filter(x => !x.ex)); }
+function logAdd(e) { e.id = e.id || uid(); e.t = e.t || Date.now();
+  if (S.gate) { e.gate = true; e.who = '출입구 카메라'; } else if (S.role !== 'admin' && S.me && S.me.name) { e.who = e.who || S.me.name; e.team = S.me.team || ''; e.uid = S.me.id; }
+  S.log.push(e); if (S.log.length > 300) S.log = S.log.slice(-300); store.set('log', S.log.filter(x => !x.ex)); }
 function seed() {   // 첫 실행용 예시 기록 — '예시'로 표시되고 관리 화면에서 지울 수 있음
   const d0 = new Date(); d0.setHours(7, 50, 0, 0); const now = Date.now() - 5 * 60e3, span = Math.max(3600e3, Math.min(now - d0.getTime(), 8 * 3600e3)), base = { getTime: () => now - span };
-  const ev = [['tbm', 'vi', { score: 3 }], ['tbm', 'ne', { score: 2 }], ['tbm', 'km', { score: 3 }], ['tbm', 'uz', { score: 3 }], ['tbm', 'id', { score: 3 }], ['tbm', 'vi', { score: 3 }],
-    ['ppe', 'vi', { n: 3, bad: 0, noH: 0, noV: 0 }], ['ppe', 'ne', { n: 2, bad: 1, noH: 1, noV: 0 }], ['rep', 'km', { cat: 'caught', loc: 'line' }], ['ppe', 'id', { n: 4, bad: 1, noH: 0, noV: 1 }],
-    ['rep', 'vi', { cat: 'hit', loc: 'fork' }], ['ppe', 'uz', { n: 2, bad: 0, noH: 0, noV: 0 }], ['rep', 'ne', { cat: 'slip', loc: 'store' }], ['ppe', 'vi', { n: 5, bad: 1, noH: 1, noV: 1 }]];
-  return ev.map((e, i) => Object.assign({ id: 'ex' + i, t: base.getTime() + span * (i + 1) / (ev.length + 1), type: e[0], lang: e[1], ex: true }, e[2])); }
+  const P = { vi: ['Nguyễn Văn Hùng', 'A조'], vi2: ['Trần Thị Mai', 'B조'], ne: ['Ram Thapa', 'A조'], km: ['Sok Dara', 'B조'], id: ['Budi Santoso', 'A조'], uz: ['Aziz Karimov', 'B조'] };
+  const ev = [['tbm', 'vi', { score: 3, total: 3 }], ['tbm', 'ne', { score: 2, total: 3 }], ['tbm', 'km', { score: 3, total: 3 }], ['tbm', 'uz', { score: 3, total: 3 }], ['tbm', 'id', { score: 3, total: 3 }], ['tbm', 'vi2', { score: 3, total: 3 }],
+    ['ppe', 'vi', { n: 3, bad: 0, noH: 0, noV: 0 }], ['ppe', 'ne', { n: 2, bad: 1, noH: 1, noV: 0 }], ['rep', 'km', { cat: 'caught', loc: 'line', status: 'doing', reply: 'r2' }], ['ppe', 'id', { n: 4, bad: 1, noH: 0, noV: 1 }],
+    ['rep', 'vi', { cat: 'hit', loc: 'fork' }], ['ppe', 'uz', { n: 2, bad: 0, noH: 0, noV: 0 }], ['rep', 'ne', { cat: 'slip', loc: 'store', status: 'done', reply: 'r4' }], ['ppe', 'vi2', { n: 5, bad: 1, noH: 1, noV: 1 }]];
+  return ev.map((e, i) => { const p = P[e[1]]; return Object.assign({ id: 'ex' + i, t: base.getTime() + span * (i + 1) / (ev.length + 1), type: e[0], lang: e[1].slice(0, 2), who: p[0], team: p[1], uid: 'ex-' + e[1], ex: true }, e[2]); }); }
+function saveLog() { store.set('log', S.log.filter(x => !x.ex)); }
+function todayNotice() { const n = store.get('notice', null); return n && isToday(n.t) ? n : null; }
+function catName(k, l) { const c = CATS.find(x => x[0] === k); return !c ? '' : (!l || l === 'ko') ? c[2] : tr(c[3], l); }
+function topLang() { const c = {}; S.log.filter(e => isToday(e.t) && !e.gate && e.lang !== 'ko').forEach(e => c[e.lang] = (c[e.lang] || 0) + 1); return (Object.entries(c).sort((a, b) => b[1] - a[1])[0] || ['vi'])[0]; }
 if (!S.log.some(e => isToday(e.t))) S.log = seed().concat(S.log);
 
 /* ───────── 음성 ───────── */
@@ -590,36 +707,73 @@ function speak(text, lang) { try { const sp = window.speechSynthesis; if (!sp ||
 /* ───────── 화면 전환 ───────── */
 function applyLang() { const lg = langOf(L()); $('#langname').textContent = lg[1]; document.documentElement.lang = lg[0];
   $$('[data-t]').forEach(e => e.textContent = t(e.dataset.t)); }
-function go(v) { S.view = v; ['lang', 'home', 'tbm', 'check', 'report', 'admin'].forEach(k => $('#v-' + k).hidden = k !== v);
+const AV = ['role', 'admin', 'inbox', 'notice', 'gate'], WV = ['role', 'lang', 'reg', 'home', 'tbm', 'check', 'report'];
+function go(v) {
+  if (S.role === 'admin') { if (!AV.includes(v)) v = 'admin'; }
+  else { if (!WV.includes(v)) v = 'home';
+    if (['home', 'tbm', 'check', 'report'].includes(v)) { if (!S.lang) v = 'lang'; else if (!(S.me && S.me.name)) v = 'reg'; } }
+  S.view = v; S.gate = v === 'gate'; if (S.gate && !S.gateLang) S.gateLang = topLang();
+  const show = S.gate ? 'check' : v;
+  ['role', 'lang', 'reg', 'home', 'tbm', 'check', 'report', 'admin', 'inbox', 'notice'].forEach(k => $('#v-' + k).hidden = k !== show);
   const tab = v === 'tbm' ? 'home' : v; $$('.tab').forEach(b => b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'));
-  if (v !== 'check') liveStop();
-  applyLang(); ({ lang: renderLangs, home: renderHome, tbm: renderTbm, check: renderCheck, report: renderReport, admin: renderAdmin }[v] || (() => {}))(); scrollTo({ top: 0 }); }
+  if (show !== 'check') liveStop();
+  applyLang(); applyRole(); ({ lang: renderLangs, reg: renderReg, home: renderHome, tbm: renderTbm, check: renderCheck, gate: renderCheck, report: renderReport, admin: renderAdmin, inbox: renderInbox, notice: renderNotice }[v] || (() => {}))(); scrollTo({ top: 0 }); }
 $$('.tab').forEach(b => b.onclick = () => go(b.dataset.tab));
 $$('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
 $('#langchip').onclick = () => go('lang');
+/* ───────── 작업자 / 관리자 모드 ───────── */
+function applyRole() { const r = S.role; document.body.classList.toggle('admin', r === 'admin'); document.body.classList.toggle('worker', r !== 'admin'); document.body.classList.toggle('picking', S.view === 'role'); document.body.classList.toggle('gating', !!S.gate); badge();
+  const c = $('#rolechip'); c.hidden = !r || S.view === 'role'; c.textContent = r === 'admin' ? '관리자' : '작업자'; }
+function setRole(r) { S.role = r; store.set('role', r);
+  if (r === 'admin') { reloadLog(); go('admin'); } else go(S.lang ? 'home' : 'lang'); }
+$$('[data-role]').forEach(b => b.onclick = () => setRole(b.dataset.role));
+$$('[data-switch]').forEach(b => b.onclick = () => go('role'));
+$('#rolechip').onclick = () => go('role');
+function reloadLog() { S.log = store.get('log', []); if (!S.log.some(e => isToday(e.t))) S.log = seed().concat(S.log); }
+// 다른 탭(작업자 화면)에서 기록이 추가되면 관리자 화면을 바로 새로 고침
+addEventListener('storage', e => { if (e.key !== 'sl_log' && e.key !== 'sl_notice') return; reloadLog(); badge();
+  const r = { admin: renderAdmin, inbox: renderInbox, notice: renderNoticeCur, home: renderHome, report: renderMine }[S.view]; r && r(); });
+setInterval(() => { if (S.view === 'admin' && !document.hidden) { reloadLog(); renderAdmin(); badge(); } }, 10000);
 
 function renderLangs() { $('#langs').innerHTML = LANGS.map(l => `<button data-l="${l[0]}" aria-pressed="${l[0] === S.lang}" lang="${l[0]}"><b>${l[1]}</b><span>${l[2]}</span></button>`).join('');
   $$('[data-l]').forEach(b => b.onclick = () => { S.lang = b.dataset.l; store.set('lang', S.lang); speak(t('hello')); go('home'); }); }
 
+/* ───────── 작업자 등록 ───────── */
+function renderReg() { $('#g-name').value = S.me.name || ''; $('#g-team').value = S.me.team || ''; $('#g-go').disabled = !$('#g-name').value.trim(); }
+$('#g-name').oninput = () => { $('#g-go').disabled = !$('#g-name').value.trim(); };
+$('#g-go').onclick = () => { const name = $('#g-name').value.trim(); if (!name) return;
+  S.me = { id: S.me.id || uid(), name, team: $('#g-team').value.trim() }; store.set('me', S.me); go('home'); };
+/* 관리자 공지 카드 */
+function renderNoticeCard() { const n = todayNotice(), box = $('#h-notice');
+  if (!n || !(n.tpl || n.text)) { box.innerHTML = ''; return; }
+  const tp = NOTICES.find(x => x.id === n.tpl), txt = tp ? tr(tp.t) : n.text, ko = tp ? tp.t.ko : '';
+  const acked = S.log.some(e => e.type === 'ack' && e.nid === n.id && e.uid === S.me.id);
+  box.innerHTML = `<div class="panel notice"><div class="spread"><span class="eyebrow">${esc(t('notice'))} · 관리자 공지</span><span class="note num">${fmt(n.t)}</span></div>
+    <div class="say" lang="${tp ? L() : 'ko'}">${esc(txt)}</div>${ko && L() !== 'ko' ? `<span class="ko">${esc(ko)}</span>` : ''}
+    <div class="row"><button class="btn sm" id="nt-say"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>${t('listen')}</button>
+    ${acked ? `<span class="pill ok">${esc(t('acked'))}</span>` : `<button class="btn sm primary" id="nt-ack" style="flex:1">${esc(t('ack'))} · 확인</button>`}</div></div>`;
+  $('#nt-say').onclick = () => speak(txt, tp ? undefined : 'ko');
+  if (!acked) $('#nt-ack').onclick = () => { logAdd({ type: 'ack', lang: L(), nid: n.id }); renderNoticeCard(); }; }
 /* ───────── 홈 ───────── */
-function renderHome() { const me = S.log.filter(e => isToday(e.t) && e.lang === L() && !e.ex);
-  $('#h-home').textContent = t('hello'); $('#home-ko').textContent = '안녕하세요 · 오늘도 안전하게 일해요';
+function renderHome() { const me = S.log.filter(e => isToday(e.t) && !e.ex && (S.me.id ? e.uid === S.me.id : e.lang === L()));
+  $('#h-home').textContent = t('hello'); $('#home-ko').textContent = '안녕하세요' + (S.me.name ? ', ' + S.me.name : '') + ' · 오늘도 안전하게 일해요'; renderNoticeCard();
   const tb = me.find(e => e.type === 'tbm'), pp = me.filter(e => e.type === 'ppe').pop(), rp = me.filter(e => e.type === 'rep');
   $('#st-tbm').className = 'dot ' + (tb ? 'ok' : ''); $('#st-tbm-t').textContent = tb ? t('ok_w') : t('not_yet');
   $('#st-ppe').className = 'dot ' + (pp ? (pp.bad ? 'ng' : 'ok') : ''); $('#st-ppe-t').textContent = pp ? (pp.bad ? '!' : t('ok_w')) + ' ' + fmt(pp.t) : t('not_yet');
   $('#st-rep').className = 'dot ' + (rp.length ? 'ok' : ''); $('#st-rep-t').textContent = rp.length ? rp.length + '' : '0'; }
 
 /* ───────── 안전 브리핑 + 퀴즈 ───────── */
-function renderTbm() { const i = S.tbmI, body = $('#tbm-body');
-  if (i < SLIDES.length) { const s = SLIDES[i];
-    $('#tbm-step').textContent = `${i + 1} / ${SLIDES.length + QUIZ.length} · 안전 수칙`;
+function tbIdx() { const n = todayNotice(), ks = n && n.slides && n.slides.length ? n.slides : null; return SLIDES.map((x, i) => i).filter(i => !ks || ks.includes(SLIDES[i].pic)); }
+function renderTbm() { const ix = tbIdx(), SL = ix.map(i => SLIDES[i]), QZ = ix.map(i => QUIZ[i]); const i = S.tbmI, body = $('#tbm-body');
+  if (i < SL.length) { const s = SL[i];
+    $('#tbm-step').textContent = `${i + 1} / ${SL.length + QZ.length} · 안전 수칙`;
     body.innerHTML = `<div class="slide"><div class="pic">${PIC[s.pic]}</div><div class="say" lang="${L()}">${esc(tr(s.t))}</div><span class="ko">${esc(s.t.ko)}</span>
       <div class="row" style="width:100%"><button class="btn" id="tb-say" style="flex:1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>${t('listen')}</button><button class="btn primary" id="tb-next" style="flex:1">${t('next')}</button></div>
-      <div class="dots">${[...Array(SLIDES.length + QUIZ.length)].map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div></div>`;
+      <div class="dots">${[...Array(SL.length + QZ.length)].map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div></div>`;
     $('#tb-say').onclick = () => speak(tr(s.t)); $('#tb-next').onclick = () => { S.tbmI++; renderTbm(); }; return; }
-  const qi = i - SLIDES.length;
-  if (qi < QUIZ.length) { const q = QUIZ[qi];
-    $('#tbm-step').textContent = `${i + 1} / ${SLIDES.length + QUIZ.length} · ${t('quiz')} · 퀴즈`;
+  const qi = i - SL.length;
+  if (qi < QZ.length) { const q = QZ[qi];
+    $('#tbm-step').textContent = `${i + 1} / ${SL.length + QZ.length} · ${t('quiz')} · 퀴즈`;
     body.innerHTML = `<div class="panel"><div class="say" style="font-size:20px;font-weight:700;line-height:1.4" lang="${L()}">${esc(tr(q.q))}</div><span class="ko">${esc(q.q.ko)}</span>
       <div class="choices">${q.a.map((a, k) => `<button data-a="${k}"><span style="display:block">${PIC[a.pic]}</span><span lang="${L()}">${esc(tr(a.t))}</span><span class="ko">${esc(a.t.ko)}</span></button>`).join('')}</div>
       <p class="note" id="qz-fb" aria-live="polite"></p></div>`;
@@ -628,9 +782,9 @@ function renderTbm() { const i = S.tbmI, body = $('#tbm-body');
       b.classList.add(a.ok ? 'right' : 'wrong'); $('#qz-fb').textContent = a.ok ? t('correct') + ' · 정답!' : t('wrong') + ' · 다시 확인하세요';
       if (a.ok) { speak(t('correct')); setTimeout(() => { S.tbmI++; renderTbm(); }, 900); } }); return; }
   const score = S.quiz.filter(Boolean).length;
-  logAdd({ type: 'tbm', lang: L(), score });
+  logAdd({ type: 'tbm', lang: L(), score, total: QZ.length });
   body.innerHTML = `<div class="done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>
-    <b lang="${L()}">${t('done')}</b><span class="ko">브리핑 완료 · 퀴즈 ${score}/${QUIZ.length} 첫 시도 정답 · 관리자 화면에 이수 기록</span>
+    <b lang="${L()}">${t('done')}</b><span class="ko">브리핑 완료 · 퀴즈 ${score}/${QZ.length} 첫 시도 정답 · 관리자 화면에 이수 기록</span>
     <button class="btn primary block" data-go2="home">${t('tab_home')}</button></div>`;
   $('[data-go2]').onclick = () => { S.tbmI = 0; S.quiz = []; go('home'); }; }
 $$('[data-go="tbm"]').forEach(b => b.addEventListener('click', () => { S.tbmI = 0; S.quiz = []; }, true));
@@ -659,9 +813,10 @@ function showResult(J, ms, fromLive) {
   a.className = 'alert ' + cls; $('#c-sym').innerHTML = cls === 'ok' ? SYM.ok : cls === 'ng' ? SYM.ng : SYM.idle;
   $('#c-t').textContent = msg; $('#c-t').lang = L(); $('#c-ko').textContent = ko; $('#c-spk').hidden = !J.P.length;
   lastMsg = msg;
-  $('#c-workers').hidden = !J.P.length; $('#c-ms').textContent = Math.round(ms) + ' ms';
+  $('#c-workers').hidden = !J.P.length && !fromLive;
+  if (!J.P.length && fromLive) $('#c-list').innerHTML = '<p class="note">작업자를 찾는 중…</p>'; $('#c-ms').textContent = Math.round(ms) + ' ms';
   $('#c-list').innerHTML = J.P.map((p, i) => `<div class="w"><span class="n" style="background:${p.ok ? 'var(--ok)' : 'var(--ng)'}">${i + 1}</span><span>작업자 ${i + 1}</span>
-    <span class="pill ${p.h ? 'ok' : 'ng'}">안전모 ${p.h ? '✓' : '✕'}</span><span class="pill ${p.v ? 'ok' : 'ng'}">조끼 ${p.v ? '✓' : '✕'}</span></div>`).join('');
+    <span class="pill ${p.h ? 'ok' : 'ng'}">안전모 ${p.h ? '✓' : '✕'}</span><span class="pill ${p.v ? 'ok' : 'ng'}">조끼 ${p.v ? '✓' : '✕'}</span></div>`).join('') || $('#c-list').innerHTML;
   return { n: J.P.length, bad: bad.length, noH: bad.filter(p => !p.h).length, noV: bad.filter(p => !p.v).length }; }
 $('#c-spk').onclick = () => lastMsg && speak(lastMsg);
 let busy = false;
@@ -677,6 +832,10 @@ async function checkImage(img) { if (!yoloReady) { toast(engErr ? 'AI 엔진 오
     if (r.bad) { speak(lastMsg); if (navigator.vibrate) navigator.vibrate([80, 60, 80]); }
   } catch (e) { toast('점검 실패: ' + e.message, 4000); } finally { busy = false; } }
 function renderCheck() { $('#c-live').hidden = !camOK;
+  $('#c-gate').hidden = !S.gate;
+  if (S.gate) { $('#h-check').textContent = '출입구 보호구 점검';
+    $('#c-glang').innerHTML = LANGS.map(l => `<button data-gl="${l[0]}" aria-pressed="${l[0] === L()}">${l[2]}</button>`).join('');
+    $$('[data-gl]').forEach(b => b.onclick = () => { S.gateLang = b.dataset.gl; store.set('gateLang', S.gateLang); applyLang(); renderCheck(); $('#c-t').textContent = t('check_hint'); speak(t('check_hint')); }); }
   $('#c-samples').innerHTML = SAMPLES.samples.map((s, i) => `<button data-s="${i}" aria-label="예시 사진 ${i + 1}"><img src="${s}" alt=""></button>`).join('');
   $$('[data-s]').forEach(b => b.onclick = () => { const im = new Image(); im.onload = () => checkImage(im); im.src = SAMPLES.samples[+b.dataset.s]; });
   if (!$('#c-t').textContent) { $('#c-t').textContent = t('check_hint'); $('#c-ko').textContent = '작업자 전신이 보이게 찍으세요'; } }
@@ -684,21 +843,29 @@ $('#c-capture').onchange = async e => { const f = e.target.files && e.target.fil
   const u = URL.createObjectURL(f); const im = new Image(); im.onload = async () => { await checkImage(im); URL.revokeObjectURL(u); }; im.onerror = () => toast('사진을 열 수 없어요'); im.src = u; };
 /* 실시간 모드 (카메라가 허용된 브라우저에서만) */
 let live = null;
-function liveStop() { if (!live) return; live.on = false; try { live.wl && live.wl.release(); } catch (e) {} if (live.st) live.st.getTracks().forEach(x => x.stop()); $('#c-video').hidden = true; $('#c-video').srcObject = null; $('#c-mode').hidden = true; $('#c-flip').hidden = true; $('#c-stage').classList.remove('mirror'); $('#c-live-k').textContent = '카메라'; live = null; }
+function liveStop() { if (!live) return; live.on = false; try { live.wl && live.wl.release(); } catch (e) {} if (live.st) live.st.getTracks().forEach(x => x.stop()); $('#c-video').hidden = true; $('#c-video').srcObject = null; $('#c-mode').hidden = true; $('#c-flip').hidden = true; $('#c-stage').classList.remove('mirror'); $('#c-live-k').textContent = '카메라'; live = null; liveLayout(false); }
+/* 실시간 카메라 영역을 화면 높이의 42% 안으로 줄여 판정 결과(안전모·조끼 ✓/✕)가 한 화면에 보이게 */
+function fitStage() { const st = $('#c-stage'), v = $('#c-video');
+  if (!live || !v.videoWidth) { st.style.width = ''; return; }
+  const ar = v.videoWidth / v.videoHeight, vh = (window.visualViewport && visualViewport.height) || innerHeight;
+  const maxH = Math.max(180, vh * 0.42), W = st.parentElement.clientWidth;
+  st.style.width = Math.round(Math.min(W, maxH * ar)) + 'px'; }
+addEventListener('resize', fitStage); addEventListener('orientationchange', () => setTimeout(fitStage, 300));
+function liveLayout(on) { $('#v-check').classList.toggle('live', on); $('#c-stage').classList.toggle('live', on); if (on) { fitStage(); scrollTo({ top: 0 }); } else $('#c-stage').style.width = ''; }
 let camFacing = 'environment';   // 'environment' = 후면, 'user' = 셀카(전면)
 const openCam = facing => navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: facing }, width: { ideal: 1280 } }, audio: false });
 function camLabel() { const selfie = camFacing === 'user'; $('#c-stage').classList.toggle('mirror', selfie); $('#c-flip-k').textContent = selfie ? '후면' : '셀카'; $('#c-mode').textContent = selfie ? '실시간 · 셀카' : '실시간'; }
 $('#c-flip').onclick = async () => { if (!live) return; const want = camFacing === 'user' ? 'environment' : 'user';
   try { const v = $('#c-video'); live.st.getTracks().forEach(x => x.stop()); const st = await openCam(want);
     live.st = st; v.srcObject = st; await v.play(); if (!v.videoWidth) await new Promise(r => v.onloadedmetadata = r);
-    camFacing = want; camLabel(); $('#c-ovl').getContext('2d').clearRect(0, 0, 9999, 9999);
+    camFacing = want; camLabel(); fitStage(); $('#c-ovl').getContext('2d').clearRect(0, 0, 9999, 9999);
   } catch (e) { toast('카메라를 바꿀 수 없어요', 3000); try { const st = await openCam(camFacing); live.st = st; $('#c-video').srcObject = st; await $('#c-video').play(); } catch (e2) { liveStop(); } } };
 $('#c-live').onclick = async () => { if (live) return liveStop();
   try { const sp = window.speechSynthesis; if (sp) { const u0 = new SpeechSynthesisUtterance(' '); u0.volume = 0; sp.speak(u0); } } catch (e) {}  // iOS: 버튼 누를 때 음성 출력 잠금 해제
   try { const v = $('#c-video'), st = await openCam(camFacing);
     v.srcObject = st; v.muted = true; await v.play(); if (!v.videoWidth) await new Promise(r => v.onloadedmetadata = r);
     live = { on: true, st, lastSay: 0, lastBad: -1, lastLog: 0, wl: null };
-    try { if (navigator.wakeLock) live.wl = await navigator.wakeLock.request('screen'); } catch (e) {} v.hidden = false; $('#c-canvas').hidden = true; $('#c-empty').hidden = true; $('#c-mode').hidden = false; $('#c-flip').hidden = false; camLabel(); $('#c-live-k').textContent = '끄기';
+    try { if (navigator.wakeLock) live.wl = await navigator.wakeLock.request('screen'); } catch (e) {} v.hidden = false; $('#c-canvas').hidden = true; $('#c-empty').hidden = true; $('#c-mode').hidden = false; $('#c-flip').hidden = false; camLabel(); $('#c-live-k').textContent = '끄기'; liveLayout(true);
     const cv = document.createElement('canvas');
     (async function loop() { if (!live || !live.on) return;
       if (!busy && !document.hidden && yoloReady) { busy = true;
@@ -712,7 +879,13 @@ $('#c-live').onclick = async () => { if (live) return liveStop();
   } catch (e) { toast(e && e.name === 'NotAllowedError' ? '이 화면에서는 실시간 카메라가 막혀 있어요. "사진 찍어 점검"을 쓰세요' : '카메라를 열 수 없어요', 4500); } };
 
 /* ───────── 위험 신고 ───────── */
-function renderReport() { const R = S.rep;
+function renderMine() { const mine = S.log.filter(e => e.type === 'rep' && S.me.id && e.uid === S.me.id).sort((a, b) => b.t - a.t).slice(0, 5);
+  $('#r-mine').hidden = !mine.length;
+  $('#r-mine-l').innerHTML = mine.map(e => { const st = e.status || 'new', rp = REPLY.find(r => r.id === e.reply), l = LOCS.find(x => x[0] === e.loc);
+    return `<div class="mr"><div class="spread"><b lang="${L()}">${esc(catName(e.cat, L()))}</b><span class="pill ${STC[st]}">${esc(tr(ST[st]))}${L() !== 'ko' ? ' · ' + ST[st].ko : ''}</span></div>
+      <span class="note"><span class="num">${fmt(e.t)}</span> · ${esc(l ? (L() === 'ko' ? l[1] : tr(l[2])) : '')}</span>
+      ${rp ? `<div class="tr"><span class="eyebrow">${esc(t('reply'))}</span><div lang="${L()}">${esc(tr(rp.t))}</div>${L() !== 'ko' ? `<span class="ko">${esc(rp.t.ko)}</span>` : ''}</div>` : ''}</div>`; }).join(''); }
+function renderReport() { const R = S.rep; renderMine();
   $('#r-cats').innerHTML = CATS.map(c => `<button data-c="${c[0]}" aria-pressed="${R.cat === c[0]}">${CATIC[c[0]]}<span><b lang="${L()}">${esc(L() === 'ko' ? c[2] : tr(c[3]))}</b><span class="ko">${c[2]}</span></span></button>`).join('');
   $('#r-locs').innerHTML = LOCS.map(l => `<button data-lc="${l[0]}" aria-pressed="${R.loc === l[0]}"><span lang="${L()}">${esc(L() === 'ko' ? l[1] : tr(l[2]))}</span><span class="ko">${l[1]}</span></button>`).join('');
   $$('[data-c]').forEach(b => b.onclick = () => { R.cat = b.dataset.c; renderReport(); });
@@ -726,18 +899,18 @@ function reportKo(e) { const c = CATS.find(x => x[0] === e.cat), l = LOCS.find(x
   return `[${fmt(e.t)}] ${l ? l[1] : ''}에서 "${c ? c[2] : ''}" 위험 신고 · ${lg[2]} 사용 근로자${e.photo ? ' · 사진 1장' : ''}`; }
 $('#r-send').onclick = () => { const R = S.rep, e = { type: 'rep', lang: L(), cat: R.cat, loc: R.loc, photo: R.photo || null }; logAdd(e);
   $('#r-send').hidden = true; $('#r-done').hidden = false; $('#r-ko').innerHTML = `<p style="margin:6px 0 0;font-weight:600">${esc(reportKo(e))}</p><p class="note">조치 제안: ${esc(CATS.find(x => x[0] === R.cat)[4])}</p>`;
-  speak(t('sent')); S.rep = { cat: null, loc: null, photo: null }; applyLang(); };
+  speak(t('sent')); S.rep = { cat: null, loc: null, photo: null }; applyLang(); renderMine(); };
 
 /* ───────── 관리 ───────── */
 function renderAdmin() { const D = S.log.filter(e => isToday(e.t)); $('#a-ex').hidden = !D.some(e => e.ex);
   const ppe = D.filter(e => e.type === 'ppe'), rep = D.filter(e => e.type === 'rep'), tbm = D.filter(e => e.type === 'tbm');
   const badW = ppe.reduce((s, e) => s + (e.bad || 0), 0), allW = ppe.reduce((s, e) => s + (e.n || 0), 0);
-  const avg = tbm.length ? tbm.reduce((s, e) => s + (e.score || 0), 0) / tbm.length : 0;
-  $('#a-stats').innerHTML = `<div class="stat"><span class="v num">${tbm.length}<small style="font-size:14px">명</small></span><span class="l">안전 브리핑 이수 · 퀴즈 평균 ${avg.toFixed(1)}/3</span></div>
+  const avg = tbm.length ? tbm.reduce((s, e) => s + (e.score || 0) / (e.total || 3), 0) / tbm.length * 100 : 0, openR = rep.filter(e => (e.status || 'new') !== 'done').length;
+  $('#a-stats').innerHTML = `<div class="stat"><span class="v num">${tbm.length}<small style="font-size:14px">명</small></span><span class="l">안전 브리핑 이수 · 퀴즈 정답률 ${avg.toFixed(0)}%</span></div>
     <div class="stat ng"><span class="v num">${badW}<small style="font-size:14px">명</small></span><span class="l">보호구 미착용 · 점검 ${ppe.length}회 ${allW}명 중</span></div>
-    <div class="stat"><span class="v num">${rep.length}<small style="font-size:14px">건</small></span><span class="l">위험 신고</span></div>
+    <div class="stat"><span class="v num">${rep.length}<small style="font-size:14px">건</small></span><span class="l">위험 신고 · 미처리 ${openR}건</span></div>
     <div class="stat"><span class="v num">${allW ? ((allW - badW) / allW * 100).toFixed(0) : '–'}<small style="font-size:14px">%</small></span><span class="l">보호구 착용률</span></div>`;
-  const byL = {}; D.forEach(e => byL[e.lang] = (byL[e.lang] || 0) + 1); const tot = D.length || 1;
+  const byL = {}; D.filter(e => !e.gate).forEach(e => byL[e.lang] = (byL[e.lang] || 0) + 1); const tot = D.length || 1;
   $('#a-langbar').innerHTML = Object.entries(byL).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<i style="width:${v / tot * 100}%;background:${langOf(k)[4]}" title="${langOf(k)[2]} ${v}"></i>`).join('');
   $('#a-langleg').innerHTML = Object.entries(byL).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span><i style="background:${langOf(k)[4]}"></i>${langOf(k)[2]} ${v}</span>`).join('');
   // 위험성평가 초안: 신고 유형 + 보호구 미착용
@@ -748,16 +921,77 @@ function renderAdmin() { const D = S.log.filter(e => isToday(e.t)); $('#a-ex').h
   lines.sort((a, b) => b.r - a.r);
   $('#a-risk').innerHTML = '<thead><tr><th>유해·위험요인</th><th>발생</th><th>위험성</th><th>감소대책(초안)</th></tr></thead><tbody>' +
     (lines.map(x => `<tr><td><b>${x.name}</b><br><span class="note">${esc(x.where)}</span></td><td class="c num">${x.n}</td><td class="c"><span class="risk ${x.r >= 6 ? 'h' : x.r >= 3 ? 'm' : 'l'}" title="가능성 ${x.p} × 중대성 ${x.sev}">${x.r}</span></td><td>${esc(x.fix)}</td></tr>`).join('') || '<tr><td colspan="4" class="note">오늘 기록이 없습니다</td></tr>') + '</tbody>';
+  const NT = todayNotice(), byW = {};
+  D.filter(e => !e.gate && e.who).forEach(e => { const w = byW[e.who] = byW[e.who] || { who: e.who, team: e.team, lang: e.lang, ex: e.ex, tbm: null, ppe: 0, bad: 0, rep: 0, ack: false };
+    if (e.type === 'tbm') w.tbm = e; if (e.type === 'ppe') { w.ppe++; if (e.bad) w.bad++; } if (e.type === 'rep') w.rep++; if (e.type === 'ack' && NT && e.nid === NT.id) w.ack = true; });
+  const WL = Object.values(byW).sort((a, b) => (b.bad - a.bad) || ((a.tbm ? 1 : 0) - (b.tbm ? 1 : 0)));
+  $('#a-wn').textContent = `${WL.length}명 · 브리핑 미이수 ${WL.filter(w => !w.tbm).length}명`;
+  $('#a-workers').innerHTML = '<thead><tr><th>작업자</th><th>브리핑</th><th>점검</th><th>신고</th>' + (NT ? '<th>공지</th>' : '') + '</tr></thead><tbody>' +
+    (WL.map(w => `<tr><td><b>${esc(w.who)}</b>${w.ex ? ' <span class="pill ex">예시</span>' : ''}<br><span class="note">${esc(langOf(w.lang)[2])}${w.team ? ' · ' + esc(w.team) : ''}</span></td>
+      <td class="c">${w.tbm ? `<span class="pill ok">✓ ${w.tbm.score}/${w.tbm.total || 3}</span>` : '<span class="pill ng">미이수</span>'}</td>
+      <td class="c num">${w.ppe}회${w.bad ? `<br><span class="pill ng">위반 ${w.bad}</span>` : ''}</td><td class="c num">${w.rep}</td>${NT ? `<td class="c">${w.ack ? '<span class="pill ok">✓</span>' : '–'}</td>` : ''}</tr>`).join('') || '<tr><td colspan="5" class="note">오늘 기록이 없습니다</td></tr>') + '</tbody>';
   const F = D.slice().sort((a, b) => b.t - a.t); $('#a-n').textContent = `${F.length}건`;
   $('#a-feed').innerHTML = F.slice(0, 30).map(e => { const lg = langOf(e.lang);
     let ic, w, s;
-    if (e.type === 'ppe') { ic = e.bad ? 'ppe' : 'okk'; w = e.bad ? `보호구 미착용 ${e.bad}명 / ${e.n}명` : `보호구 점검 정상 · ${e.n}명`; if (e.live) w += ' · 실시간'; s = [e.noH ? '안전모' : '', e.noV ? '조끼' : ''].filter(Boolean).join('·'); }
-    else if (e.type === 'rep') { ic = 'rep'; const c = CATS.find(x => x[0] === e.cat), l = LOCS.find(x => x[0] === e.loc); w = `위험 신고 · ${c ? c[2] : ''}`; s = l ? l[1] : ''; }
-    else { ic = 'tbm'; w = `안전 브리핑 이수 · 퀴즈 ${e.score}/3`; s = ''; }
+    if (e.type === 'ppe') { ic = e.bad ? 'ppe' : 'okk'; w = e.bad ? `보호구 미착용 ${e.bad}명 / ${e.n}명` : `보호구 점검 정상 · ${e.n}명`; if (e.live) w += ' · 실시간'; if (e.gate) w += ' · 출입구'; s = [e.noH ? '안전모' : '', e.noV ? '조끼' : ''].filter(Boolean).join('·'); }
+    else if (e.type === 'rep') { ic = 'rep'; const c = CATS.find(x => x[0] === e.cat), l = LOCS.find(x => x[0] === e.loc); w = `위험 신고 · ${c ? c[2] : ''} <span class="pill ${STC[e.status || 'new']}" style="padding:1px 7px;font-size:11px">${ST[e.status || 'new'].ko}</span>`; s = l ? l[1] : ''; }
+    else if (e.type === 'ack') { ic = 'okk'; w = '공지 확인'; s = ''; }
+    else { ic = 'tbm'; w = `안전 브리핑 이수 · 퀴즈 ${e.score}/${e.total || 3}`; s = ''; }
     const icon = { ppe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M5 15c0-4 3-7 7-7s7 3 7 7"/><path d="M3.5 15.5h17" stroke-linecap="round"/></svg>', okk: SYM.ok,
       rep: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 3 22 20H2Z"/><path d="M12 10v4" stroke-linecap="round"/></svg>',
       tbm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z"/></svg>' }[ic];
-    return `<div class="e"><span class="ic ${ic}">${icon}</span><div><div class="w">${w}${e.ex ? ' <span class="pill ex">예시</span>' : ''}</div><div class="s"><span class="num">${fmt(e.t)}</span> · <span class="pill lang" style="padding:1px 7px;font-size:11px">${lg[2]}</span>${s ? ' · ' + s : ''}</div></div>${e.thumb || e.photo ? `<img src="${e.thumb || e.photo}" alt="">` : '<span></span>'}</div>`; }).join('') || '<p class="note">기록이 없습니다</p>'; }
+    return `<div class="e"><span class="ic ${ic}">${icon}</span><div><div class="w">${w}${e.ex ? ' <span class="pill ex">예시</span>' : ''}</div><div class="s"><span class="num">${fmt(e.t)}</span> · ${e.who ? esc(e.who) + ' · ' : ''}<span class="pill lang" style="padding:1px 7px;font-size:11px">${lg[2]}</span>${s ? ' · ' + s : ''}</div></div>${e.thumb || e.photo ? `<img src="${e.thumb || e.photo}" alt="">` : '<span></span>'}</div>`; }).join('') || '<p class="note">기록이 없습니다</p>'; }
+/* 신고 처리 */
+function badge() { const b = $('#bd-inbox'); if (!b) return; const n = S.log.filter(e => e.type === 'rep' && (e.status || 'new') === 'new').length; b.hidden = !n; b.textContent = n; }
+const inF = (e, k) => k === 'all' || (k === 'open' ? (e.status || 'new') !== 'done' : e.status === 'done');
+function renderInbox() { const f = S.ifilter, R = S.log.filter(e => e.type === 'rep').sort((a, b) => b.t - a.t), list = R.filter(e => inF(e, f));
+  $('#i-filter').innerHTML = [['open', '미처리'], ['done', '완료'], ['all', '전체']].map(([k, l]) => `<button data-if="${k}" aria-pressed="${f === k}">${l} <span class="num">${R.filter(e => inF(e, k)).length}</span></button>`).join('');
+  $('#i-list').innerHTML = list.map(e => { const c = CATS.find(x => x[0] === e.cat) || [], l = LOCS.find(x => x[0] === e.loc) || [], lg = langOf(e.lang), st = e.status || 'new', rp = REPLY.find(r => r.id === e.reply);
+    return `<div class="panel">
+      <div class="spread"><b style="font-size:16px">${esc(c[2] || '')} · ${esc(l[1] || '')}</b><span class="pill ${STC[st]}">${ST[st].ko}</span></div>
+      <div class="note"><span class="num">${fmt(e.t)}</span> · ${esc(e.who || '이름 없음')}${e.team ? ' (' + esc(e.team) + ')' : ''} · <span class="pill lang" style="padding:1px 7px;font-size:11px">${lg[2]}</span>${e.ex ? ' <span class="pill ex">예시</span>' : ''}</div>
+      ${e.photo ? `<img class="rph" src="${e.photo}" alt="신고 사진">` : ''}
+      <p class="note">조치 제안: ${esc(c[4] || '')}</p>
+      <div class="seg">${['new', 'doing', 'done'].map(k => `<button data-st="${k}" data-id="${e.id}" aria-pressed="${st === k}">${ST[k].ko}</button>`).join('')}</div>
+      <label class="fl"><span>작업자에게 답변 · ${lg[2]}로 전달</span><select data-rp="${e.id}"><option value="">— 답변 고르기 —</option>${REPLY.map(r => `<option value="${r.id}"${e.reply === r.id ? ' selected' : ''}>${esc(r.t.ko)}</option>`).join('')}</select></label>
+      ${rp ? `<div class="tr"><span class="eyebrow">작업자 화면에 보이는 문장</span><span lang="${e.lang}">${esc(tr(rp.t, e.lang))}</span></div>` : ''}</div>`; }).join('') || '<p class="note">해당하는 신고가 없어요</p>';
+  $$('[data-if]').forEach(b => b.onclick = () => { S.ifilter = b.dataset.if; renderInbox(); });
+  const byId = id => S.log.find(x => x.id === id);
+  $$('[data-st]').forEach(b => b.onclick = () => { const e = byId(b.dataset.id); if (!e) return; e.status = b.dataset.st; e.ht = Date.now(); saveLog(); badge(); renderInbox(); toast('처리 상태: ' + ST[e.status].ko); });
+  $$('[data-rp]').forEach(sel => sel.onchange = () => { const e = byId(sel.dataset.rp); if (!e) return; e.reply = sel.value || null; if (e.reply && (e.status || 'new') === 'new') e.status = 'doing'; if (e.reply === 'r4') e.status = 'done'; e.ht = Date.now(); saveLog(); badge(); renderInbox(); if (e.reply) toast('작업자에게 답변을 보냈어요'); }); }
+/* 공지·브리핑 */
+function renderNoticeCur() { const n = todayNotice(), box = $('#n-cur'); box.hidden = !n; if (!n) return;
+  const tp = NOTICES.find(x => x.id === n.tpl), acks = S.log.filter(e => e.type === 'ack' && e.nid === n.id);
+  const who = [...new Set(acks.map(e => e.who || langOf(e.lang)[2]))];
+  box.innerHTML = `<div class="spread"><h2>보낸 공지</h2><span class="note num">${fmt(n.t)}</span></div>
+    <p style="margin:0;font-weight:600">${esc(tp ? tp.t.ko : (n.text || '(공지 문장 없음)'))}</p>
+    <p class="note">브리핑 주제: ${esc((n.slides || []).map(k => SLN[k]).join(', '))}</p>
+    <div class="spread"><span class="pill ${who.length ? 'ok' : ''}">확인 ${who.length}명</span><span class="note">${esc(who.join(', '))}</span></div>`; }
+function noticePrev() { const D = S.nd, pv = $('#n-prev'), tp = NOTICES.find(x => x.id === D.tpl), pl = topLang();
+  $$('[data-tp]').forEach(b => b.setAttribute('aria-pressed', b.dataset.tp === (D.tpl || '') && (D.tpl || !D.text) ? 'true' : 'false'));
+  if (tp) { pv.hidden = false; pv.innerHTML = `<span class="eyebrow">${esc(langOf(pl)[2])} 작업자 화면 미리보기</span><span lang="${pl}">${esc(tr(tp.t, pl))}</span>`; }
+  else if (D.text.trim()) { pv.hidden = false; pv.innerHTML = '<span class="eyebrow">미리보기</span><span>한국어 그대로 표시돼요 (자동 번역은 서버 연동 후)</span>'; }
+  else pv.hidden = true; }
+function renderNotice() { if (!S.nd) { const n = todayNotice(); S.nd = { slides: n && n.slides ? [...n.slides] : SLIDES.map(x => x.pic), tpl: n ? n.tpl : null, text: n ? n.text || '' : '' }; }
+  const D = S.nd;
+  $('#n-slides').innerHTML = SLIDES.map(x => `<button data-sl="${x.pic}" aria-pressed="${D.slides.includes(x.pic)}">${SLN[x.pic]}</button>`).join('');
+  $('#n-tpls').innerHTML = `<button data-tp="">공지 없음</button>` + NOTICES.map(x => `<button data-tp="${x.id}">${esc(x.t.ko)}</button>`).join('');
+  $('#n-text').value = D.text; noticePrev(); renderNoticeCur();
+  $$('[data-sl]').forEach(b => b.onclick = () => { const k = b.dataset.sl; if (D.slides.includes(k)) { if (D.slides.length > 1) D.slides = D.slides.filter(x => x !== k); else return toast('주제를 하나 이상 골라 주세요'); } else D.slides.push(k); renderNotice(); });
+  $$('[data-tp]').forEach(b => b.onclick = () => { D.tpl = b.dataset.tp || null; D.text = ''; $('#n-text').value = ''; noticePrev(); }); }
+$('#n-text').oninput = () => { S.nd.text = $('#n-text').value; if (S.nd.text) S.nd.tpl = null; noticePrev(); };
+$('#n-send').onclick = () => { const D = S.nd; const n = { id: uid(), t: Date.now(), slides: SLIDES.map(x => x.pic).filter(k => D.slides.includes(k)), tpl: D.tpl, text: D.tpl ? '' : D.text.trim() };
+  store.set('notice', n); renderNoticeCur(); toast('작업자 화면에 공지와 오늘의 브리핑을 보냈어요'); };
+/* 내보내기 */
+$('#a-csv').onclick = () => { const D = S.log.filter(e => isToday(e.t)).sort((a, b) => a.t - b.t);
+  const typ = { tbm: '안전 브리핑', ppe: '보호구 점검', rep: '위험 신고', ack: '공지 확인' };
+  const desc = e => e.type === 'tbm' ? `퀴즈 ${e.score}/${e.total || 3}` : e.type === 'ppe' ? `${e.n}명 중 ${e.bad}명 미착용` + (e.noH ? ' 안전모' : '') + (e.noV ? ' 조끼' : '') + (e.live ? ' (실시간)' : '') + (e.gate ? ' (출입구)' : '')
+    : e.type === 'rep' ? `${catName(e.cat, 'ko')} @ ${(LOCS.find(x => x[0] === e.loc) || [])[1] || ''}` + (e.reply ? ' / 답변: ' + (REPLY.find(r => r.id === e.reply) || { t: { ko: '' } }).t.ko : '') : '';
+  const rows = [['날짜', '시간', '구분', '작업자', '소속', '언어', '내용', '처리상태', '비고']].concat(D.map(e => [new Date(e.t).toLocaleDateString('ko-KR'), fmt(e.t), typ[e.type] || e.type, e.who || '', e.team || '', langOf(e.lang)[2], desc(e), e.type === 'rep' ? ST[e.status || 'new'].ko : '', e.ex ? '예시' : '']));
+  const csv = '﻿' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `링고가드_안전기록_${new Date().toLocaleDateString('sv-SE')}.csv`;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast('엑셀(CSV) 파일을 내려받았어요'); };
+$('#a-print').onclick = () => print();
 $('#a-clear').onclick = async () => { if (!(await ask('기록 지우기', '이 기기에 저장된 점검·신고·브리핑 기록과 예시 기록을 모두 지웁니다.', '지우기'))) return; S.log = []; store.set('log', []); renderAdmin(); toast('기록을 지웠어요'); };
 
 /* ───────── 엔진 ───────── */
@@ -802,7 +1036,12 @@ async function loadEngine() {
 }
 $('#eng').onclick = async () => { if (!engErr) return;
   if (await ask('AI 엔진을 불러오지 못했어요', engErr + '\n\n와이파이/데이터 연결을 확인한 뒤 다시 시도해 주세요. 계속되면 이 문구를 캡처해 개발팀에 보내 주세요.', '다시 시도')) loadEngine(); };
-(function boot() { go(S.lang ? 'home' : 'lang'); loadEngine(); })();
+(function boot() {
+  let q = null;
+  try { q = new URLSearchParams(location.search).get('role') || new URLSearchParams(location.search).get('mode'); if (q === 'admin' || q === 'worker') S.role = q; /* 주소(?role=)로 연 탭은 그 탭에서만 적용 */ } catch (e) {}
+  /* 앱을 열 때마다 작업자/관리자 고르는 화면부터 (주소에 ?role= 이 있으면 바로 진입) */
+  if (!q || (q !== 'admin' && q !== 'worker')) { S.role = null; go('role'); } else if (S.role === 'admin') go('admin'); else go(S.lang ? 'home' : 'lang');
+  loadEngine(); })();
 document.addEventListener('visibilitychange', () => { if (document.hidden) liveStop(); });
 /* 앱 설치 (https로 배포된 웹앱에서만 보임) */
 (function install() {
