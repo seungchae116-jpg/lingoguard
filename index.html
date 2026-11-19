@@ -725,15 +725,29 @@ QUIZ.forEach(q => q.a.forEach(a => { if (a.ok) OBJK.set(a.t, 'a_' + a.pic); }));
 NOTICES.forEach(x => OBJK.set(x.t, x.id)); REPLY.forEach(x => OBJK.set(x.t, x.id));
 [...NOTICES.map(x => x.t), ...REPLY.map(x => x.t), ...QUIZ.flatMap(q => q.a.map(a => a.t))].forEach(o => Object.values(o).forEach(v => typeof v === 'string' && !REV.has(v) && REV.set(v, o)));
 let AUD = {}; const AU = new Audio(); AU.preload = 'auto';
+/* 누르자마자 나오도록: 음성 파일을 미리 받아 메모리에 풀어 둔 뒤(Web Audio) 바로 재생 */
+let ACX = null, CUR = null; const BUF = {};
+function acx() { if (!ACX) { try { const C = window.AudioContext || window.webkitAudioContext; if (C) ACX = new C(); } catch (e) {} } return ACX; }
+document.addEventListener('pointerdown', () => { const c = acx(); if (c && c.state === 'suspended') c.resume().catch(() => {}); }, true);
+async function warmClip(lg, k) { const id = lg + '/' + k; if (BUF[id] || !(AUD[lg] || []).includes(k)) return; const c = acx(); if (!c) return;
+  try { const ab = await (await fetch(`audio/${lg}/${k}.mp3`)).arrayBuffer(); BUF[id] = await new Promise((res, rej) => c.decodeAudioData(ab, res, rej)); } catch (e) {} }
+let warming = Promise.resolve();
+function warmLang(lg) { if (!AUD[lg]) return; warming = warming.then(async () => { for (const k of AUD[lg]) await warmClip(lg, k); }); }
 fetch('audio/index.json').then(r => r.ok ? r.json() : {}).then(j => { AUD = j || {};
-  // 오프라인에서도 나오도록 미리 받아 두기(서비스워커가 저장)
-  setTimeout(() => Object.entries(AUD).forEach(([lg, ks]) => ks.forEach(k => fetch(`audio/${lg}/${k}.mp3`).catch(() => {}))), 4000); }).catch(() => {});
+  // ① 세 언어 인사말 → ② 지금 쓰는 언어 전체를 먼저 메모리에 → ③ 나머지는 오프라인용으로 받아만 두기(서비스워커가 저장)
+  warming = warming.then(async () => { for (const lg of Object.keys(AUD)) await warmClip(lg, 'hello'); }); warmLang(L());
+  setTimeout(() => Object.entries(AUD).forEach(([lg, ks]) => ks.forEach(k => fetch(`audio/${lg}/${k}.mp3`).catch(() => {}))), 8000); }).catch(() => {});
+function stopClip() { try { CUR && CUR.stop(); } catch (e) {} CUR = null; try { AU.pause(); } catch (e) {} }
 function playClip(text, lg) { const o = REV.get(text), k = o && OBJK.get(o);
   if (!k || !(AUD[lg] || []).includes(k)) return false;
-  try { window.speechSynthesis && speechSynthesis.cancel(); AU.pause(); AU.src = `audio/${lg}/${k}.mp3`; AU.currentTime = 0;
+  const b = BUF[lg + '/' + k];
+  if (b && ACX) { try { window.speechSynthesis && speechSynthesis.cancel(); stopClip(); if (ACX.state === 'suspended') ACX.resume().catch(() => {});
+      const src = ACX.createBufferSource(); src.buffer = b; src.connect(ACX.destination); src.start(0); CUR = src; return true; } catch (e) {} }
+  warmLang(lg);   // 아직 메모리에 없으면 이번엔 파일로 재생하고, 그 언어를 미리 풀어 둔다
+  try { window.speechSynthesis && speechSynthesis.cancel(); stopClip(); AU.src = `audio/${lg}/${k}.mp3`; AU.currentTime = 0;
     const p = AU.play(); if (p && p.catch) p.catch(() => { AUD[lg] = (AUD[lg] || []).filter(x => x !== k); speak(text, lg); }); return true; } catch (e) { return false; } }
 let warnedNoVoice = {};
-function speak(text, lang) { try { if (text && playClip(text, lang || L())) return true; try { AU.pause(); } catch (e) {} const sp = window.speechSynthesis; if (!sp || !text) return false; sp.cancel();
+function speak(text, lang) { try { if (text && playClip(text, lang || L())) return true; stopClip(); const sp = window.speechSynthesis; if (!sp || !text) return false; sp.cancel();
   const lg = lang || L(), code = langOf(lg)[3]; let say = text, v = pickVoice(code), useCode = code;
   if (!v && VOICES.length) {            // 이 기기에 그 언어 음성이 없음 → 이상한 발음으로 읽지 않고 영어로 안내
     const o = REV.get(text), ev = pickVoice('en-US');
@@ -752,6 +766,7 @@ function go(v) {
   else { if (!WV.includes(v)) v = 'home';
     if (['home', 'tbm', 'news', 'report'].includes(v)) { if (!S.lang) v = 'lang'; else if (!(S.me && S.me.name)) v = 'reg'; } }
   S.view = v; S.gate = v === 'gate'; if (S.gate && !S.gateLang) S.gateLang = topLang();
+  if (typeof warmLang === 'function') warmLang(S.gate ? S.gateLang : L());
   const show = S.gate ? 'check' : v;
   ['role', 'lang', 'reg', 'home', 'tbm', 'news', 'check', 'report', 'admin', 'inbox', 'notice'].forEach(k => $('#v-' + k).hidden = k !== show);
   const tab = v === 'tbm' ? 'news' : v; $$('.tab').forEach(b => b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'));
@@ -775,7 +790,7 @@ addEventListener('storage', e => { if (e.key !== 'sl_log' && e.key !== 'sl_notic
 setInterval(() => { if (S.view === 'admin' && !document.hidden) { reloadLog(); renderAdmin(); badge(); } }, 10000);
 
 function renderLangs() { $('#langs').innerHTML = LANGS.map(l => `<button data-l="${l[0]}" aria-pressed="${l[0] === S.lang}" lang="${l[0]}"><b>${l[1]}</b><span>${l[2]}</span></button>`).join('');
-  $$('[data-l]').forEach(b => b.onclick = () => { S.lang = b.dataset.l; store.set('lang', S.lang); speak(t('hello')); go('home'); }); }
+  $$('[data-l]').forEach(b => b.onclick = () => { S.lang = b.dataset.l; store.set('lang', S.lang); warmLang(S.lang); speak(t('hello')); go('home'); }); }
 
 /* ───────── 작업자 등록 ───────── */
 function renderReg() { $('#g-name').value = S.me.name || ''; $('#g-team').value = S.me.team || ''; $('#g-go').disabled = !$('#g-name').value.trim(); }
@@ -886,7 +901,7 @@ function renderCheck() { $('#c-live').hidden = !camOK;
   $('#c-gate').hidden = !S.gate;
   if (S.gate) { $('#h-check').textContent = '출입구 보호구 점검';
     $('#c-glang').innerHTML = LANGS.map(l => `<button data-gl="${l[0]}" aria-pressed="${l[0] === L()}">${l[2]}</button>`).join('');
-    $$('[data-gl]').forEach(b => b.onclick = () => { S.gateLang = b.dataset.gl; store.set('gateLang', S.gateLang); applyLang(); renderCheck(); $('#c-t').textContent = t('check_hint'); speak(t('check_hint')); }); }
+    $$('[data-gl]').forEach(b => b.onclick = () => { S.gateLang = b.dataset.gl; store.set('gateLang', S.gateLang); warmLang(S.gateLang); applyLang(); renderCheck(); $('#c-t').textContent = t('check_hint'); speak(t('check_hint')); }); }
   $('#c-samples').innerHTML = SAMPLES.samples.map((s, i) => `<button data-s="${i}" aria-label="예시 사진 ${i + 1}"><img src="${s}" alt=""></button>`).join('');
   $$('[data-s]').forEach(b => b.onclick = () => { const im = new Image(); im.onload = () => checkImage(im); im.src = SAMPLES.samples[+b.dataset.s]; });
   if (!$('#c-t').textContent) { $('#c-t').textContent = t('check_hint'); $('#c-ko').textContent = '작업자 전신이 보이게 찍으세요'; } }
