@@ -235,6 +235,7 @@ html,body{overflow-x:clip;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 .app,main,.view,.panel,.fl{min-width:0;max-width:100%}
 .fl select{width:100%;max-width:100%;min-width:0;text-overflow:ellipsis;overflow:hidden;white-space:nowrap}
 .panel,.tr,.notice,.alert,.mr{overflow-wrap:anywhere;word-break:break-word}
+.ko[data-dup]{display:none!important}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
@@ -804,7 +805,7 @@ function renderNoticeCard(sel) { const n = todayNotice(), box = $(sel || '#h-not
   if (!n || !(n.tpl || n.text)) { box.innerHTML = sel ? `<div class="panel"><p class="note" lang="${L()}">${esc(t('no_notice'))} · 오늘 공지가 없어요</p></div>` : ''; return; }
   const tp = NOTICES.find(x => x.id === n.tpl), txt = tp ? tr(tp.t) : n.text, ko = tp ? tp.t.ko : '';
   const acked = S.log.some(e => e.type === 'ack' && e.nid === n.id && e.uid === S.me.id);
-  box.innerHTML = `<div class="panel notice"><div class="spread"><span class="eyebrow">${esc(t('notice'))} · 관리자 공지</span><span class="note num">${fmt(n.t)}</span></div>
+  box.innerHTML = `<div class="panel notice"><div class="spread"><span class="eyebrow">${esc(t('notice'))}${L() !== 'ko' ? ' · 관리자 공지' : ''}</span><span class="note num">${fmt(n.t)}</span></div>
     <div class="say" lang="${tp ? L() : 'ko'}">${esc(txt)}</div>${ko && L() !== 'ko' ? `<span class="ko">${esc(ko)}</span>` : ''}
     <div class="row"><button class="btn sm" id="nt-say"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>${t('listen')}</button>
     ${acked ? `<span class="pill ok">${esc(t('acked'))}</span>` : `<button class="btn sm primary" id="nt-ack" style="flex:1">${esc(t('ack'))} · 확인</button>`}</div></div>`;
@@ -836,18 +837,18 @@ function renderTbm() { S.qLock = false; const ix = tbIdx(), SL = ix.map(i => SLI
     $('#tb-say').onclick = () => speak(tr(s.t)); $('#tb-next').onclick = () => { S.tbmI++; renderTbm(); }; return; }
   const qi = i - SL.length;
   if (qi < QZ.length) { const q = QZ[qi];
-    $('#tbm-step').textContent = `${i + 1} / ${SL.length + QZ.length} · ${t('quiz')} · 퀴즈`;
+    $('#tbm-step').textContent = `${i + 1} / ${SL.length + QZ.length} · ${t('quiz')}${L() !== 'ko' ? ' · 퀴즈' : ''}`;
     body.innerHTML = `<div class="panel"><div class="say" style="font-size:20px;font-weight:700;line-height:1.4" lang="${L()}">${esc(tr(q.q))}</div><span class="ko">${esc(q.q.ko)}</span>
       <div class="choices">${q.a.map((a, k) => `<button data-a="${k}"><span style="display:block">${PIC[a.pic]}</span><span lang="${L()}">${esc(tr(a.t))}</span><span class="ko">${esc(a.t.ko)}</span></button>`).join('')}</div>
       <div class="note" id="qz-fb" aria-live="polite"></div></div>`;
     $$('[data-a]').forEach(b => b.onclick = () => { if (S.qLock) return; S.qLock = true; const a = q.a[+b.dataset.a];
       if (S.quiz[qi] === undefined) S.quiz[qi] = !!a.ok;
       $$('[data-a]').forEach(x => x.disabled = true);
-      if (a.ok) { b.classList.add('right'); $('#qz-fb').textContent = t('correct') + ' · 정답!'; speak(t('correct')); setTimeout(() => { S.tbmI++; renderTbm(); }, 900); return; }
+      if (a.ok) { b.classList.add('right'); $('#qz-fb').textContent = t('correct') + (L() !== 'ko' ? ' · 정답!' : ''); speak(t('correct')); setTimeout(() => { S.tbmI++; renderTbm(); }, 900); return; }
       // 오답: 고른 답은 빨강, 정답은 초록으로 표시하고 정답을 크게 보여준 뒤 '확인'으로 다음 문제
       b.classList.add('wrong'); const k = q.a.findIndex(x => x.ok), ok = q.a[k]; $(`[data-a="${k}"]`).classList.add('right');
       if (navigator.vibrate) navigator.vibrate(120);
-      $('#qz-fb').innerHTML = `<div class="ans"><span class="ans-x" lang="${L()}">${esc(t('wrong'))} · 오답</span><span class="eyebrow">${esc(t('answer'))} · 정답</span><div class="ans-pic">${PIC[ok.pic]}</div><b lang="${L()}">${esc(tr(ok.t))}</b>${L() !== 'ko' ? `<span class="ko">${esc(ok.t.ko)}</span>` : ''}<button class="btn primary big block" id="qz-ok">${esc(t('ok_btn'))} · 확인</button></div>`;
+      $('#qz-fb').innerHTML = `<div class="ans"><span class="ans-x" lang="${L()}">${esc(t('wrong'))}${L() !== 'ko' ? ' · 오답' : ''}</span><span class="eyebrow">${esc(t('answer'))}${L() !== 'ko' ? ' · 정답' : ''}</span><div class="ans-pic">${PIC[ok.pic]}</div><b lang="${L()}">${esc(tr(ok.t))}</b>${L() !== 'ko' ? `<span class="ko">${esc(ok.t.ko)}</span>` : ''}<button class="btn primary big block" id="qz-ok">${esc(t('ok_btn'))}${L() !== 'ko' ? ' · 확인' : ''}</button></div>`;
       speak(tr(ok.t)); $('#qz-ok').onclick = () => { S.tbmI++; renderTbm(); }; $('#qz-ok').scrollIntoView({ block: 'center', behavior: 'smooth' }); }); return; }
   const score = S.quiz.filter(Boolean).length;
   logAdd({ type: 'tbm', lang: L(), score, total: QZ.length });
@@ -1106,6 +1107,11 @@ async function loadEngine() {
 }
 $('#eng').onclick = async () => { if (!engErr) return;
   if (await ask('AI 엔진을 불러오지 못했어요', engErr + '\n\n와이파이/데이터 연결을 확인한 뒤 다시 시도해 주세요. 계속되면 이 문구를 캡처해 개발팀에 보내 주세요.', '다시 시도')) loadEngine(); };
+/* 한국어로 쓸 때는 바로 위 글자와 똑같은 한국어 보조 문구(.ko)를 숨김 (예: 넘어짐 / 넘어짐) */
+function dedupKo() { const on = L() === 'ko' && S.role !== 'admin';
+  $$('main .ko').forEach(e => { const p = e.previousElementSibling, nz = x => x.replace(/^[\s·]+/, '').trim(), same = !!p && nz(p.textContent) === nz(e.textContent);
+    if (on && same) e.dataset.dup = '1'; else delete e.dataset.dup; }); }
+let dedupQ = 0; new MutationObserver(() => { if (!dedupQ) dedupQ = requestAnimationFrame(() => { dedupQ = 0; dedupKo(); }); }).observe(document.querySelector('main'), { childList: true, subtree: true, characterData: true });
 (function boot() {
   let q = null;
   try { q = new URLSearchParams(location.search).get('role') || new URLSearchParams(location.search).get('mode'); if (q === 'admin' || q === 'worker') S.role = q; /* 주소(?role=)로 연 탭은 그 탭에서만 적용 */ } catch (e) {}
