@@ -214,6 +214,7 @@ body.worker .tabs .in{grid-template-columns:repeat(3,1fr)}
 .fl input,.fl textarea,.fl select{min-height:50px;border:1.5px solid var(--line);border-radius:var(--r-s);padding:10px 12px;background:var(--surface);font-size:16px;color:var(--ink);font-weight:500}
 .fl textarea{resize:vertical;line-height:1.5}
 .seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.seg.two{grid-template-columns:repeat(2,1fr)}
 .seg button{min-height:44px;border:1.5px solid var(--line);background:var(--surface);border-radius:var(--r-s);font-weight:700;font-size:14px;cursor:pointer}
 .seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
 .chips.col{flex-direction:column;align-items:stretch} .chips.col button{border-radius:var(--r-s);text-align:left;padding:10px 14px}
@@ -301,7 +302,7 @@ html,body{overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   <!-- ── 보호구 점검 ── -->
   <section class="view" id="v-check" hidden aria-labelledby="h-check">
    <div><h1 id="h-check" data-t="check_title"></h1><span class="ko" data-t="check_hint"></span></div>
-   <div class="panel" id="c-gate" hidden><div class="spread"><h2>출입구 점검 모드</h2><span class="pill">관리자</span></div><p class="note">입구에 폰·태블릿을 세워 두고 '실시간'을 누르세요. 미착용 경고는 아래 언어로 말해요.</p><div class="chips" id="c-glang"></div></div>
+   <div class="panel" id="c-gate" hidden><div class="spread"><h2>보호구 점검 모드</h2><span class="pill">관리자</span></div><p class="note">입구에 폰·태블릿을 세워 두고 '실시간'을 누르세요. 미착용 경고는 아래 언어로 말해요.</p><div class="chips" id="c-glang"></div></div>
    <div class="alert" id="c-alert" aria-live="polite">
     <div class="sym" id="c-sym"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="12" cy="12" r="8"/></svg></div>
     <div><div class="t" id="c-t"></div><span class="ko" id="c-ko"></span></div>
@@ -384,7 +385,7 @@ html,body{overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
   <button class="tab" data-tab="news"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6" stroke-linecap="round"/></svg><span data-t="tab_news"></span><i class="bd" id="bd-news" hidden>!</i></button>
  </div></nav>
  <nav class="tabs a" aria-label="관리자 메뉴"><div class="in">
-  <button class="tab" data-tab="gate"><span class="ind"></span><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/></svg><span>출입구 점검</span></button>
+  <button class="tab" data-tab="gate"><span class="ind"></span><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/></svg><span>보호구 점검</span></button>
   <button class="tab" data-tab="admin"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-7"/></svg><span>현황</span></button>
   <button class="tab" data-tab="inbox"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 22 20H2Z"/><path d="M12 10v4" stroke-linecap="round"/></svg><span>신고 처리</span><i class="bd" id="bd-inbox" hidden></i></button>
   <button class="tab" data-tab="notice"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6" stroke-linecap="round"/></svg><span>공지·브리핑</span></button>
@@ -899,7 +900,7 @@ async function checkImage(img) { if (!yoloReady) { toast(engErr ? 'AI 엔진 오
   } catch (e) { toast('점검 실패: ' + e.message, 4000); } finally { busy = false; } }
 function renderCheck() { $('#c-live').hidden = !camOK;
   $('#c-gate').hidden = !S.gate;
-  if (S.gate) { $('#h-check').textContent = '출입구 보호구 점검';
+  if (S.gate) { $('#h-check').textContent = '보호구 점검';
     $('#c-glang').innerHTML = LANGS.map(l => `<button data-gl="${l[0]}" aria-pressed="${l[0] === L()}">${l[2]}</button>`).join('');
     $$('[data-gl]').forEach(b => b.onclick = () => { S.gateLang = b.dataset.gl; store.set('gateLang', S.gateLang); warmLang(S.gateLang); applyLang(); renderCheck(); $('#c-t').textContent = t('check_hint'); speak(t('check_hint')); }); }
   $('#c-samples').innerHTML = SAMPLES.samples.map((s, i) => `<button data-s="${i}" aria-label="예시 사진 ${i + 1}"><img src="${s}" alt=""></button>`).join('');
@@ -1020,7 +1021,7 @@ function renderInbox() { const f = S.ifilter, R = S.log.filter(e => e.type === '
       <div class="note"><span class="num">${fmt(e.t)}</span> · ${esc(e.who || '이름 없음')}${e.team ? ' (' + esc(e.team) + ')' : ''} · <span class="pill lang" style="padding:1px 7px;font-size:11px">${lg[2]}</span>${e.ex ? ' <span class="pill ex">예시</span>' : ''}</div>
       ${e.photo ? `<img class="rph" src="${e.photo}" alt="신고 사진">` : ''}
       <p class="note">조치 제안: ${esc(c[4] || '')}</p>
-      <div class="seg">${['new', 'doing', 'done'].map(k => `<button data-st="${k}" data-id="${e.id}" aria-pressed="${st === k}">${ST[k].ko}</button>`).join('')}</div>
+      <div class="seg two">${['doing', 'done'].map(k => `<button data-st="${k}" data-id="${e.id}" aria-pressed="${st === k}">${ST[k].ko}</button>`).join('')}</div>
       <label class="fl"><span>작업자에게 답변 · ${lg[2]}로 전달</span><select data-rp="${e.id}"><option value="">— 답변 고르기 —</option>${REPLY.map(r => `<option value="${r.id}"${e.reply === r.id ? ' selected' : ''}>${esc(RS[r.id])}</option>`).join('')}</select></label>
       ${rp ? `<div class="tr"><span class="eyebrow">작업자 화면에 보이는 문장</span><span lang="${e.lang}">${esc(tr(rp.t, e.lang))}</span><span class="ko">${esc(rp.t.ko)}</span></div>` : ''}</div>`; }).join('') || '<p class="note">해당하는 신고가 없어요</p>';
   $$('[data-if]').forEach(b => b.onclick = () => { S.ifilter = b.dataset.if; renderInbox(); });
