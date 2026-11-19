@@ -3,15 +3,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B1F33">
-<title>SafeLingo · 링고가드</title>
+<title>세이프가드 · SafeGuard</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="SafeLingo">
+<meta name="apple-mobile-web-app-title" content="세이프가드">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="description" content="외국인 근로자를 위한 모국어 AI 현장안전 코치 — 링고가드(LingoGuard)">
+<meta name="description" content="외국인 근로자를 위한 모국어 AI 현장안전 코치 — 세이프가드(SafeGuard)">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=Noto+Sans+Khmer:wght@400;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
@@ -201,7 +201,7 @@ table.t td.c{text-align:center}
 .stage.live{margin:0 auto}
 /* 작업자·관리자 모드 */
 .rolechip{border:1px solid #2F4A66;background:#16314D;color:#E6F0FA;border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;min-height:32px;cursor:pointer}
-body.admin .tabs.w,body:not(.admin) .tabs.a,body.admin #langchip,body.admin:not(.gating) .eng,body.picking .tabs,body.picking #langchip{display:none}
+body.admin .tabs.w,body:not(.admin) .tabs.a,body.admin #langchip,body:not(.gating) .eng,body.picking .tabs,body.picking #langchip{display:none}
 body.picking main{padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))}
 .langchip,.rolechip,.eng{white-space:nowrap;flex:none}
 @media (max-width:420px){.bar{gap:8px;padding:10px 12px}.brand{font-size:0;gap:0}.langchip{padding:4px 9px}}
@@ -224,12 +224,17 @@ body.worker .tabs .in{grid-template-columns:repeat(3,1fr)}
 .mr{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid var(--line2)} .mr:last-child{border-bottom:0}
 #v-check.live #c-gate{display:none}
 @media print{.bar,.tabs,.switch,#a-clear,#a-exp,.toast{display:none!important} main{padding:0} body{background:#fff} .panel,.stats{break-inside:avoid}}
+.choices button:disabled{cursor:default;color:inherit} .choices button:disabled:not(.right):not(.wrong){opacity:.5}
+.ans{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;background:var(--ok-soft);border:2px solid var(--ok);border-radius:var(--r);padding:16px;margin-top:4px;color:var(--ink)}
+.ans .ans-x{font-weight:700;color:var(--ng);font-size:15px}
+.ans .ans-pic svg{width:104px;height:104px}
+.ans b{font-size:23px;line-height:1.35}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
 
 <div class="app">
  <header class="bar">
-  <div class="brand"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#005EB8"/><path d="M8.5 19.5c0-5 3.4-8.7 7.5-8.7s7.5 3.7 7.5 8.7" fill="none" stroke="#fff" stroke-width="2.6"/><path d="M7 20.5h18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M16 10.8v-2.3" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>SafeLingo</div>
+  <div class="brand"><svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="15" fill="#005EB8"/><path d="M8.5 19.5c0-5 3.4-8.7 7.5-8.7s7.5 3.7 7.5 8.7" fill="none" stroke="#fff" stroke-width="2.6"/><path d="M7 20.5h18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path d="M16 10.8v-2.3" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg>세이프가드</div>
   <button class="langchip" id="langchip" aria-label="언어 바꾸기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span id="langname">Tiếng Việt</span></button>
   <button class="rolechip" id="rolechip" hidden aria-label="화면 모드 바꾸기"></button>
   <div class="eng" id="eng" role="status"><i></i><span id="eng-t">AI 로딩</span></div>
@@ -267,7 +272,7 @@ body.worker .tabs .in{grid-template-columns:repeat(3,1fr)}
     <div><div class="hi" id="h-home"></div><span class="ko" id="home-ko"></span></div>
     <div class="st">
      <div><b><i class="dot" id="st-tbm"></i><span data-t="st_tbm"></span></b><span id="st-tbm-t"></span></div>
-     <div><b><i class="dot" id="st-ppe"></i><span data-t="st_ppe"></span></b><span id="st-ppe-t"></span></div>
+     <div><b><i class="dot" id="st-ppe"></i><span data-t="tab_news"></span></b><span id="st-ppe-t"></span></div>
      <div><b><i class="dot" id="st-rep"></i><span data-t="st_rep"></span></b><span id="st-rep-t"></span></div>
     </div>
    </div>
@@ -278,7 +283,6 @@ body.worker .tabs .in{grid-template-columns:repeat(3,1fr)}
     <button class="btn primary" id="inst-btn">설치</button>
    </div>
    <button class="action" data-go="tbm"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z"/><path d="M8 10h6M8 14h4"/><path d="M18 8h2v11"/></svg></span><span><span class="t" data-t="tbm"></span><span class="ko" data-t="tbm_sub"></span></span><svg class="chev" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></button>
-   <button class="action" data-go="check"><span class="ic"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/><path d="M16 10.5V8" stroke-linecap="round"/></svg></span><span><span class="t" data-t="check_title"></span><span class="ko" data-t="check_sub"></span></span><svg class="chev" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></button>
    <button class="action warn" data-go="report"><span class="ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 22 20H2Z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 10v4.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><circle cx="12" cy="17.3" r="1.3" fill="currentColor"/></svg></span><span><span class="t" data-t="report_title"></span><span class="ko" data-t="report_sub"></span></span><svg class="chev" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 5l7 7-7 7"/></svg></button>
    <div class="row" style="justify-content:center;gap:18px"><button class="switch" data-go="reg">이름 바꾸기</button><button class="switch" data-switch>관리자 화면으로 전환</button></div>
   </section>
@@ -313,6 +317,17 @@ body.worker .tabs .in{grid-template-columns:repeat(3,1fr)}
     <button class="btn big" id="c-live" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M3 12a9 9 0 0 1 18 0 9 9 0 0 1-18 0"/></svg><span>실시간<span class="k" id="c-live-k">카메라</span></span></button>
    </div>
    <div class="panel" id="c-samp"><div class="spread"><h2>예시 현장 사진</h2><span class="pill ex">공개 데이터셋</span></div><div class="samples" id="c-samples"></div><p class="note">현장이 없어도 눌러 보면 실제 AI가 판정하고 모국어 경고를 냅니다.</p></div>
+  </section>
+
+  <!-- ── 작업자: 공지·브리핑 ── -->
+  <section class="view" id="v-news" hidden aria-labelledby="h-news">
+   <div><h1 id="h-news" data-t="tab_news"></h1><span class="ko">관리자가 보낸 공지와 오늘의 안전 브리핑</span></div>
+   <div id="nw-notice"></div>
+   <div class="panel"><h2><span data-t="tbm"></span> <span class="ko" style="display:inline">· 오늘의 안전 브리핑</span></h2>
+    <div class="workers" id="nw-topics"></div>
+    <div id="nw-state"></div>
+    <button class="btn primary big block" data-go="tbm"><span><span data-t="tbm"></span><span class="k">안전 브리핑 시작</span></span></button>
+   </div>
   </section>
 
   <!-- ── 위험 신고 ── -->
@@ -361,15 +376,14 @@ body.worker .tabs .in{grid-template-columns:repeat(3,1fr)}
 
  <nav class="tabs w" aria-label="주 메뉴"><div class="in">
   <button class="tab" data-tab="home" aria-current="page"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/></svg><span data-t="tab_home"></span></button>
-  <button class="tab" data-tab="check"><span class="ind"></span><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/></svg><span data-t="tab_check"></span></button>
   <button class="tab" data-tab="report"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 22 20H2Z"/><path d="M12 10v4" stroke-linecap="round"/></svg><span data-t="tab_report"></span></button>
-  <button class="tab" data-tab="admin"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-7"/></svg><span>관리<small>관리자</small></span></button>
+  <button class="tab" data-tab="news"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6" stroke-linecap="round"/></svg><span data-t="tab_news"></span><i class="bd" id="bd-news" hidden>!</i></button>
  </div></nav>
  <nav class="tabs a" aria-label="관리자 메뉴"><div class="in">
+  <button class="tab" data-tab="gate"><span class="ind"></span><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/></svg><span>출입구 점검</span></button>
   <button class="tab" data-tab="admin"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 20V11M12 20V5M19 20v-7"/></svg><span>현황</span></button>
   <button class="tab" data-tab="inbox"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3 22 20H2Z"/><path d="M12 10v4" stroke-linecap="round"/></svg><span>신고 처리</span><i class="bd" id="bd-inbox" hidden></i></button>
   <button class="tab" data-tab="notice"><span class="ind"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 10v4h3l7 4V6L7 10z"/><path d="M18 9a4 4 0 0 1 0 6" stroke-linecap="round"/></svg><span>공지·브리핑</span></button>
-  <button class="tab" data-tab="gate"><span class="ind"></span><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M7 21c0-6 4-10.5 9-10.5s9 4.5 9 10.5"/><path d="M5 22h22" stroke-linecap="round"/></svg><span>출입구 점검</span></button>
  </div></nav>
  <div class="toast" id="toast" role="status" hidden></div>
  <div class="modal" id="modal" hidden><div class="box" role="dialog" aria-modal="true" aria-labelledby="m-t"><h2 id="m-t" style="font-size:17px;color:var(--ink)"></h2><p class="note" id="m-d"></p><div class="row"><button class="btn" id="m-no" style="flex:1">취소</button><button class="btn primary" id="m-yes" style="flex:1">확인</button></div></div></div>
@@ -533,6 +547,10 @@ const LANGS = [['vi', 'Tiếng Việt', '베트남어', 'vi-VN', '#DA251D'], ['n
   ['id', 'Bahasa Indonesia', '인도네시아어', 'id-ID', '#E0A100'], ['uz', "O'zbekcha", '우즈베크어', 'uz-UZ', '#1E88E5'], ['zh', '中文', '중국어', 'zh-CN', '#6D4C41'],
   ['en', 'English', '영어', 'en-US', '#546E7A'], ['ko', '한국어', '한국어', 'ko-KR', '#005EB8']];
 const T = {
+ answer: { ko: '정답', vi: 'Đáp án đúng', ne: 'सही उत्तर', km: 'ចម្លើយត្រឹមត្រូវ', id: 'Jawaban yang benar', uz: "To'g'ri javob", zh: '正确答案', en: 'Correct answer' },
+ ok_btn: { ko: '확인', vi: 'Xác nhận', ne: 'ठीक छ', km: 'យល់ព្រម', id: 'Oke', uz: 'Tasdiqlash', zh: '确认', en: 'OK' },
+ tab_news: { ko: '공지·브리핑', vi: 'Thông báo', ne: 'सूचना', km: 'សេចក្តីជូនដំណឹង', id: 'Pengumuman', uz: "E'lonlar", zh: '通知', en: 'Notices' },
+ no_notice: { ko: '오늘 공지가 없어요', vi: 'Hôm nay chưa có thông báo', ne: 'आज कुनै सूचना छैन', km: 'ថ្ងៃនេះមិនមានសេចក្តីជូនដំណឹងទេ', id: 'Belum ada pengumuman hari ini', uz: "Bugun e'lon yo'q", zh: '今天没有通知', en: 'No notices today' },
  notice: { ko: '관리자 공지', vi: 'Thông báo từ quản lý', ne: 'व्यवस्थापकको सूचना', km: 'សេចក្តីជូនដំណឹងពីអ្នកគ្រប់គ្រង', id: 'Pengumuman manajer', uz: "Rahbar e'loni", zh: '管理人员通知', en: 'Notice from manager' },
  ack: { ko: '확인했어요', vi: 'Tôi đã hiểu', ne: 'बुझें', km: 'ខ្ញុំបានយល់', id: 'Saya mengerti', uz: 'Tushundim', zh: '我已了解', en: 'I understand' },
  acked: { ko: '확인 완료', vi: 'Đã xác nhận', ne: 'पुष्टि भयो', km: 'បានបញ្ជាក់', id: 'Sudah dikonfirmasi', uz: 'Tasdiqlandi', zh: '已确认', en: 'Confirmed' },
@@ -707,17 +725,17 @@ function speak(text, lang) { try { const sp = window.speechSynthesis; if (!sp ||
 /* ───────── 화면 전환 ───────── */
 function applyLang() { const lg = langOf(L()); $('#langname').textContent = lg[1]; document.documentElement.lang = lg[0];
   $$('[data-t]').forEach(e => e.textContent = t(e.dataset.t)); }
-const AV = ['role', 'admin', 'inbox', 'notice', 'gate'], WV = ['role', 'lang', 'reg', 'home', 'tbm', 'check', 'report'];
+const AV = ['role', 'admin', 'inbox', 'notice', 'gate'], WV = ['role', 'lang', 'reg', 'home', 'tbm', 'news', 'report'];
 function go(v) {
   if (S.role === 'admin') { if (!AV.includes(v)) v = 'admin'; }
   else { if (!WV.includes(v)) v = 'home';
-    if (['home', 'tbm', 'check', 'report'].includes(v)) { if (!S.lang) v = 'lang'; else if (!(S.me && S.me.name)) v = 'reg'; } }
+    if (['home', 'tbm', 'news', 'report'].includes(v)) { if (!S.lang) v = 'lang'; else if (!(S.me && S.me.name)) v = 'reg'; } }
   S.view = v; S.gate = v === 'gate'; if (S.gate && !S.gateLang) S.gateLang = topLang();
   const show = S.gate ? 'check' : v;
-  ['role', 'lang', 'reg', 'home', 'tbm', 'check', 'report', 'admin', 'inbox', 'notice'].forEach(k => $('#v-' + k).hidden = k !== show);
-  const tab = v === 'tbm' ? 'home' : v; $$('.tab').forEach(b => b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'));
+  ['role', 'lang', 'reg', 'home', 'tbm', 'news', 'check', 'report', 'admin', 'inbox', 'notice'].forEach(k => $('#v-' + k).hidden = k !== show);
+  const tab = v === 'tbm' ? 'news' : v; $$('.tab').forEach(b => b.setAttribute('aria-current', b.dataset.tab === tab ? 'page' : 'false'));
   if (show !== 'check') liveStop();
-  applyLang(); applyRole(); ({ lang: renderLangs, reg: renderReg, home: renderHome, tbm: renderTbm, check: renderCheck, gate: renderCheck, report: renderReport, admin: renderAdmin, inbox: renderInbox, notice: renderNotice }[v] || (() => {}))(); scrollTo({ top: 0 }); }
+  applyLang(); applyRole(); ({ lang: renderLangs, reg: renderReg, home: renderHome, tbm: renderTbm, check: renderCheck, gate: renderCheck, report: renderReport, news: renderNews, admin: renderAdmin, inbox: renderInbox, notice: renderNotice }[v] || (() => {}))(); scrollTo({ top: 0 }); }
 $$('.tab').forEach(b => b.onclick = () => go(b.dataset.tab));
 $$('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
 $('#langchip').onclick = () => go('lang');
@@ -725,14 +743,14 @@ $('#langchip').onclick = () => go('lang');
 function applyRole() { const r = S.role; document.body.classList.toggle('admin', r === 'admin'); document.body.classList.toggle('worker', r !== 'admin'); document.body.classList.toggle('picking', S.view === 'role'); document.body.classList.toggle('gating', !!S.gate); badge();
   const c = $('#rolechip'); c.hidden = !r || S.view === 'role'; c.textContent = r === 'admin' ? '관리자' : '작업자'; }
 function setRole(r) { S.role = r; store.set('role', r);
-  if (r === 'admin') { reloadLog(); go('admin'); } else go(S.lang ? 'home' : 'lang'); }
+  if (r === 'admin') { reloadLog(); go('gate'); } else go(S.lang ? 'home' : 'lang'); }
 $$('[data-role]').forEach(b => b.onclick = () => setRole(b.dataset.role));
 $$('[data-switch]').forEach(b => b.onclick = () => go('role'));
 $('#rolechip').onclick = () => go('role');
 function reloadLog() { S.log = store.get('log', []); if (!S.log.some(e => isToday(e.t))) S.log = seed().concat(S.log); }
 // 다른 탭(작업자 화면)에서 기록이 추가되면 관리자 화면을 바로 새로 고침
 addEventListener('storage', e => { if (e.key !== 'sl_log' && e.key !== 'sl_notice') return; reloadLog(); badge();
-  const r = { admin: renderAdmin, inbox: renderInbox, notice: renderNoticeCur, home: renderHome, report: renderMine }[S.view]; r && r(); });
+  const r = { admin: renderAdmin, inbox: renderInbox, notice: renderNoticeCur, home: renderHome, news: renderNews, report: renderMine }[S.view]; r && r(); });
 setInterval(() => { if (S.view === 'admin' && !document.hidden) { reloadLog(); renderAdmin(); badge(); } }, 10000);
 
 function renderLangs() { $('#langs').innerHTML = LANGS.map(l => `<button data-l="${l[0]}" aria-pressed="${l[0] === S.lang}" lang="${l[0]}"><b>${l[1]}</b><span>${l[2]}</span></button>`).join('');
@@ -744,8 +762,8 @@ $('#g-name').oninput = () => { $('#g-go').disabled = !$('#g-name').value.trim();
 $('#g-go').onclick = () => { const name = $('#g-name').value.trim(); if (!name) return;
   S.me = { id: S.me.id || uid(), name, team: $('#g-team').value.trim() }; store.set('me', S.me); go('home'); };
 /* 관리자 공지 카드 */
-function renderNoticeCard() { const n = todayNotice(), box = $('#h-notice');
-  if (!n || !(n.tpl || n.text)) { box.innerHTML = ''; return; }
+function renderNoticeCard(sel) { const n = todayNotice(), box = $(sel || '#h-notice');
+  if (!n || !(n.tpl || n.text)) { box.innerHTML = sel ? `<div class="panel"><p class="note" lang="${L()}">${esc(t('no_notice'))} · 오늘 공지가 없어요</p></div>` : ''; return; }
   const tp = NOTICES.find(x => x.id === n.tpl), txt = tp ? tr(tp.t) : n.text, ko = tp ? tp.t.ko : '';
   const acked = S.log.some(e => e.type === 'ack' && e.nid === n.id && e.uid === S.me.id);
   box.innerHTML = `<div class="panel notice"><div class="spread"><span class="eyebrow">${esc(t('notice'))} · 관리자 공지</span><span class="note num">${fmt(n.t)}</span></div>
@@ -753,18 +771,25 @@ function renderNoticeCard() { const n = todayNotice(), box = $('#h-notice');
     <div class="row"><button class="btn sm" id="nt-say"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/></svg>${t('listen')}</button>
     ${acked ? `<span class="pill ok">${esc(t('acked'))}</span>` : `<button class="btn sm primary" id="nt-ack" style="flex:1">${esc(t('ack'))} · 확인</button>`}</div></div>`;
   $('#nt-say').onclick = () => speak(txt, tp ? undefined : 'ko');
-  if (!acked) $('#nt-ack').onclick = () => { logAdd({ type: 'ack', lang: L(), nid: n.id }); renderNoticeCard(); }; }
+  if (!acked) $('#nt-ack').onclick = () => { logAdd({ type: 'ack', lang: L(), nid: n.id }); renderNoticeCard(sel); badge(); }; }
+/* ───────── 공지·브리핑 (작업자) ───────── */
+function renderNews() { $('#h-notice').innerHTML = ''; renderNoticeCard('#nw-notice');
+  const SL = tbIdx().map(i => SLIDES[i]);
+  $('#nw-topics').innerHTML = SL.map((x, i) => `<div class="w" style="grid-template-columns:44px 1fr"><span style="width:44px;height:44px">${PIC[x.pic]}</span><span><span lang="${L()}" style="font-weight:600">${esc(tr(x.t))}</span>${L() !== 'ko' ? `<span class="ko">${esc(x.t.ko)}</span>` : ''}</span></div>`).join('');
+  const done = S.log.filter(e => e.type === 'tbm' && isToday(e.t) && e.uid === S.me.id).pop();
+  $('#nw-state').innerHTML = done ? `<span class="pill ok">✓ ${esc(t('ok_w'))} · 퀴즈 ${done.score}/${done.total || 3}</span>` : `<span class="pill ng">${esc(t('not_yet'))} · 미이수</span>`; }
 /* ───────── 홈 ───────── */
 function renderHome() { const me = S.log.filter(e => isToday(e.t) && !e.ex && (S.me.id ? e.uid === S.me.id : e.lang === L()));
-  $('#h-home').textContent = t('hello'); $('#home-ko').textContent = '안녕하세요' + (S.me.name ? ', ' + S.me.name : '') + ' · 오늘도 안전하게 일해요'; renderNoticeCard();
+  $('#h-home').textContent = t('hello'); $('#home-ko').textContent = '안녕하세요' + (S.me.name ? ', ' + S.me.name : '') + ' · 오늘도 안전하게 일해요'; $('#nw-notice').innerHTML = ''; renderNoticeCard();
   const tb = me.find(e => e.type === 'tbm'), pp = me.filter(e => e.type === 'ppe').pop(), rp = me.filter(e => e.type === 'rep');
   $('#st-tbm').className = 'dot ' + (tb ? 'ok' : ''); $('#st-tbm-t').textContent = tb ? t('ok_w') : t('not_yet');
-  $('#st-ppe').className = 'dot ' + (pp ? (pp.bad ? 'ng' : 'ok') : ''); $('#st-ppe-t').textContent = pp ? (pp.bad ? '!' : t('ok_w')) + ' ' + fmt(pp.t) : t('not_yet');
+  { const n = todayNotice(), has = n && (n.tpl || n.text), ak = has && S.log.some(e => e.type === 'ack' && e.nid === n.id && e.uid === S.me.id);
+    $('#st-ppe').className = 'dot ' + (!has ? '' : ak ? 'ok' : 'ng'); $('#st-ppe-t').textContent = !has ? '–' : ak ? t('acked') : '!'; }
   $('#st-rep').className = 'dot ' + (rp.length ? 'ok' : ''); $('#st-rep-t').textContent = rp.length ? rp.length + '' : '0'; }
 
 /* ───────── 안전 브리핑 + 퀴즈 ───────── */
 function tbIdx() { const n = todayNotice(), ks = n && n.slides && n.slides.length ? n.slides : null; return SLIDES.map((x, i) => i).filter(i => !ks || ks.includes(SLIDES[i].pic)); }
-function renderTbm() { const ix = tbIdx(), SL = ix.map(i => SLIDES[i]), QZ = ix.map(i => QUIZ[i]); const i = S.tbmI, body = $('#tbm-body');
+function renderTbm() { S.qLock = false; const ix = tbIdx(), SL = ix.map(i => SLIDES[i]), QZ = ix.map(i => QUIZ[i]); const i = S.tbmI, body = $('#tbm-body');
   if (i < SL.length) { const s = SL[i];
     $('#tbm-step').textContent = `${i + 1} / ${SL.length + QZ.length} · 안전 수칙`;
     body.innerHTML = `<div class="slide"><div class="pic">${PIC[s.pic]}</div><div class="say" lang="${L()}">${esc(tr(s.t))}</div><span class="ko">${esc(s.t.ko)}</span>
@@ -776,11 +801,16 @@ function renderTbm() { const ix = tbIdx(), SL = ix.map(i => SLIDES[i]), QZ = ix.
     $('#tbm-step').textContent = `${i + 1} / ${SL.length + QZ.length} · ${t('quiz')} · 퀴즈`;
     body.innerHTML = `<div class="panel"><div class="say" style="font-size:20px;font-weight:700;line-height:1.4" lang="${L()}">${esc(tr(q.q))}</div><span class="ko">${esc(q.q.ko)}</span>
       <div class="choices">${q.a.map((a, k) => `<button data-a="${k}"><span style="display:block">${PIC[a.pic]}</span><span lang="${L()}">${esc(tr(a.t))}</span><span class="ko">${esc(a.t.ko)}</span></button>`).join('')}</div>
-      <p class="note" id="qz-fb" aria-live="polite"></p></div>`;
-    $$('[data-a]').forEach(b => b.onclick = () => { const a = q.a[+b.dataset.a];
+      <div class="note" id="qz-fb" aria-live="polite"></div></div>`;
+    $$('[data-a]').forEach(b => b.onclick = () => { if (S.qLock) return; S.qLock = true; const a = q.a[+b.dataset.a];
       if (S.quiz[qi] === undefined) S.quiz[qi] = !!a.ok;
-      b.classList.add(a.ok ? 'right' : 'wrong'); $('#qz-fb').textContent = a.ok ? t('correct') + ' · 정답!' : t('wrong') + ' · 다시 확인하세요';
-      if (a.ok) { speak(t('correct')); setTimeout(() => { S.tbmI++; renderTbm(); }, 900); } }); return; }
+      $$('[data-a]').forEach(x => x.disabled = true);
+      if (a.ok) { b.classList.add('right'); $('#qz-fb').textContent = t('correct') + ' · 정답!'; speak(t('correct')); setTimeout(() => { S.tbmI++; renderTbm(); }, 900); return; }
+      // 오답: 고른 답은 빨강, 정답은 초록으로 표시하고 정답을 크게 보여준 뒤 '확인'으로 다음 문제
+      b.classList.add('wrong'); const k = q.a.findIndex(x => x.ok), ok = q.a[k]; $(`[data-a="${k}"]`).classList.add('right');
+      if (navigator.vibrate) navigator.vibrate(120);
+      $('#qz-fb').innerHTML = `<div class="ans"><span class="ans-x" lang="${L()}">${esc(t('wrong'))} · 오답</span><span class="eyebrow">${esc(t('answer'))} · 정답</span><div class="ans-pic">${PIC[ok.pic]}</div><b lang="${L()}">${esc(tr(ok.t))}</b>${L() !== 'ko' ? `<span class="ko">${esc(ok.t.ko)}</span>` : ''}<button class="btn primary big block" id="qz-ok">${esc(t('ok_btn'))} · 확인</button></div>`;
+      speak(tr(ok.t)); $('#qz-ok').onclick = () => { S.tbmI++; renderTbm(); }; $('#qz-ok').scrollIntoView({ block: 'center', behavior: 'smooth' }); }); return; }
   const score = S.quiz.filter(Boolean).length;
   logAdd({ type: 'tbm', lang: L(), score, total: QZ.length });
   body.innerHTML = `<div class="done"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M7.5 12.5l3 3 6-6.5"/></svg>
@@ -942,7 +972,8 @@ function renderAdmin() { const D = S.log.filter(e => isToday(e.t)); $('#a-ex').h
       tbm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h11a3 3 0 0 1 3 3v11H7a3 3 0 0 1-3-3z"/></svg>' }[ic];
     return `<div class="e"><span class="ic ${ic}">${icon}</span><div><div class="w">${w}${e.ex ? ' <span class="pill ex">예시</span>' : ''}</div><div class="s"><span class="num">${fmt(e.t)}</span> · ${e.who ? esc(e.who) + ' · ' : ''}<span class="pill lang" style="padding:1px 7px;font-size:11px">${lg[2]}</span>${s ? ' · ' + s : ''}</div></div>${e.thumb || e.photo ? `<img src="${e.thumb || e.photo}" alt="">` : '<span></span>'}</div>`; }).join('') || '<p class="note">기록이 없습니다</p>'; }
 /* 신고 처리 */
-function badge() { const b = $('#bd-inbox'); if (!b) return; const n = S.log.filter(e => e.type === 'rep' && (e.status || 'new') === 'new').length; b.hidden = !n; b.textContent = n; }
+function badge() { const bn = $('#bd-news'); if (bn) { const n = todayNotice(), has = n && (n.tpl || n.text); bn.hidden = !has || S.log.some(e => e.type === 'ack' && e.nid === n.id && e.uid === S.me.id); }
+  const b = $('#bd-inbox'); if (!b) return; const n = S.log.filter(e => e.type === 'rep' && (e.status || 'new') === 'new').length; b.hidden = !n; b.textContent = n; }
 const inF = (e, k) => k === 'all' || (k === 'open' ? (e.status || 'new') !== 'done' : e.status === 'done');
 function renderInbox() { const f = S.ifilter, R = S.log.filter(e => e.type === 'rep').sort((a, b) => b.t - a.t), list = R.filter(e => inF(e, f));
   $('#i-filter').innerHTML = [['open', '미처리'], ['done', '완료'], ['all', '전체']].map(([k, l]) => `<button data-if="${k}" aria-pressed="${f === k}">${l} <span class="num">${R.filter(e => inF(e, k)).length}</span></button>`).join('');
@@ -989,7 +1020,7 @@ $('#a-csv').onclick = () => { const D = S.log.filter(e => isToday(e.t)).sort((a,
     : e.type === 'rep' ? `${catName(e.cat, 'ko')} @ ${(LOCS.find(x => x[0] === e.loc) || [])[1] || ''}` + (e.reply ? ' / 답변: ' + (REPLY.find(r => r.id === e.reply) || { t: { ko: '' } }).t.ko : '') : '';
   const rows = [['날짜', '시간', '구분', '작업자', '소속', '언어', '내용', '처리상태', '비고']].concat(D.map(e => [new Date(e.t).toLocaleDateString('ko-KR'), fmt(e.t), typ[e.type] || e.type, e.who || '', e.team || '', langOf(e.lang)[2], desc(e), e.type === 'rep' ? ST[e.status || 'new'].ko : '', e.ex ? '예시' : '']));
   const csv = '﻿' + rows.map(r => r.map(v => '"' + String(v).replace(/"/g, '""') + '"').join(',')).join('\r\n');
-  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `링고가드_안전기록_${new Date().toLocaleDateString('sv-SE')}.csv`;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })); a.download = `세이프가드_안전기록_${new Date().toLocaleDateString('sv-SE')}.csv`;
   document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500); toast('엑셀(CSV) 파일을 내려받았어요'); };
 $('#a-print').onclick = () => print();
 $('#a-clear').onclick = async () => { if (!(await ask('기록 지우기', '이 기기에 저장된 점검·신고·브리핑 기록과 예시 기록을 모두 지웁니다.', '지우기'))) return; S.log = []; store.set('log', []); renderAdmin(); toast('기록을 지웠어요'); };
@@ -1040,7 +1071,7 @@ $('#eng').onclick = async () => { if (!engErr) return;
   let q = null;
   try { q = new URLSearchParams(location.search).get('role') || new URLSearchParams(location.search).get('mode'); if (q === 'admin' || q === 'worker') S.role = q; /* 주소(?role=)로 연 탭은 그 탭에서만 적용 */ } catch (e) {}
   /* 앱을 열 때마다 작업자/관리자 고르는 화면부터 (주소에 ?role= 이 있으면 바로 진입) */
-  if (!q || (q !== 'admin' && q !== 'worker')) { S.role = null; go('role'); } else if (S.role === 'admin') go('admin'); else go(S.lang ? 'home' : 'lang');
+  if (!q || (q !== 'admin' && q !== 'worker')) { S.role = null; go('role'); } else if (S.role === 'admin') go('gate'); else go(S.lang ? 'home' : 'lang');
   loadEngine(); })();
 document.addEventListener('visibilitychange', () => { if (document.hidden) liveStop(); });
 /* 앱 설치 (https로 배포된 웹앱에서만 보임) */
@@ -1050,7 +1081,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) liveS
   if (standalone) return;
   let deferred = null; const box = $('#inst'), btn = $('#inst-btn');
   addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; box.hidden = false; });
-  addEventListener('appinstalled', () => { box.hidden = true; toast('설치됐어요. 홈 화면의 SafeLingo 아이콘으로 실행하세요', 4000); });
+  addEventListener('appinstalled', () => { box.hidden = true; toast('설치됐어요. 홈 화면의 세이프가드 아이콘으로 실행하세요', 4000); });
   const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if (ios) { box.hidden = false; $('#inst-d').textContent = 'Safari 아래쪽 공유 버튼 → "홈 화면에 추가"를 누르세요'; btn.hidden = true; }
   btn.onclick = async () => { if (!deferred) return; deferred.prompt(); const r = await deferred.userChoice; deferred = null; if (r.outcome !== 'accepted') box.hidden = false; else box.hidden = true; };
